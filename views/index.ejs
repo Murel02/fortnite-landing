@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fortnite Landing Spot Picker</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <h1>Fortnite Landing Spot Picker</h1>
+    <p>Klik på knappen for at få et tilfældigt landingssted.</p>
+    <form method="GET" action="/">
+      <button type="submit">Pick a Spot</button>
+    </form>
+    <% if (spot) { %>
+    <div class="result">
+      <h2><%= spot.name %></h2>
+      <p><%= spot.description %></p>
+    </div>
+    <% } %>
+  </body>
+</html>

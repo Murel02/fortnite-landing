@@ -1,93 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Fortnite Landing Spot Picker</title>
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <div class="container">
-    <h1>Fortnite Landing Spot Picker</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fortnite Landing Spot Picker</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Fortnite Landing Spot Picker</h1>
 
-    <!-- Kontrolpanel -->
-    <div class="controls">
-      <label for="numSelect">Antal spots:</label>
-      <select id="numSelect">
-        <option value="1">1 spiller</option>
-        <option value="2">2 spillere</option>
-        <option value="3">3 spillere</option>
-        <option value="4">4 spillere</option>
-      </select>
-      <button id="pickBtn">Vælg random</button>
+      <!-- Kontrolpanel -->
+      <div class="controls">
+        <label for="numSelect">Antal spots:</label>
+        <select id="numSelect">
+          <option value="1">1 spiller</option>
+          <option value="2">2 spillere</option>
+          <option value="3">3 spillere</option>
+          <option value="4">4 spillere</option>
+        </select>
+        <button id="pickBtn">Vælg random</button>
+      </div>
+
+      <!-- Resultatområde -->
+      <div id="results" class="results"></div>
+
+      <!-- Historik -->
+      <h2 class="section-heading">Seneste picks</h2>
+      <ul id="historyList" class="history"></ul>
+
+      <!-- Liste over alle spots -->
+      <h2 class="section-heading">Alle lokationer</h2>
+      <ul id="allSpots" class="all-spots"></ul>
     </div>
+    <script id="spotsData" type="application/json">
+      <%- JSON.stringify(spots) %>
+    </script>
 
-    <!-- Resultatområde -->
-    <div id="results" class="results"></div>
+    <script>
+      // Data fra serveren (EJS escape)
+      const spots = JSON.parse(
+        document.getElementById("spotsData").textContent
+      );
 
-    <!-- Historik -->
-    <h2 class="section-heading">Seneste picks</h2>
-    <ul id="historyList" class="history"></ul>
+      const pickBtn = document.getElementById("pickBtn");
+      const numSelect = document.getElementById("numSelect");
+      const results = document.getElementById("results");
+      const historyList = document.getElementById("historyList");
+      const allSpots = document.getElementById("allSpots");
 
-    <!-- Liste over alle spots -->
-    <h2 class="section-heading">Alle lokationer</h2>
-    <ul id="allSpots" class="all-spots"></ul>
-  </div>
+      // Hold historik i et array
+      const history = [];
 
-  <script>
-    // Data fra serveren (EJS escape)
-    const spots = JSON.stringify(spots);
-
-    const pickBtn = document.getElementById('pickBtn');
-    const numSelect = document.getElementById('numSelect');
-    const results = document.getElementById('results');
-    const historyList = document.getElementById('historyList');
-    const allSpots = document.getElementById('allSpots');
-
-    // Hold historik i et array
-    const history = [];
-
-    // Udfyld liste over alle spots
-    spots.forEach(({ name }) => {
-      const li = document.createElement('li');
-      li.textContent = name;
-      allSpots.appendChild(li);
-    });
-
-    function pickRandom() {
-      const num = parseInt(numSelect.value, 10);
-      const picks = [];
-      const copy = [...spots];
-      for (let i = 0; i < num && copy.length; i++) {
-        const idx = Math.floor(Math.random() * copy.length);
-        picks.push(copy.splice(idx, 1)[0].name);
-      }
-      return picks;
-    }
-
-    function renderResults(picks) {
-      results.innerHTML = '';
-      picks.forEach((p) => {
-        const div = document.createElement('div');
-        div.className = 'card fade-in';
-        div.innerHTML = `<h2>${p}</h2>`;
-        results.appendChild(div);
+      // Udfyld liste over alle spots
+      spots.forEach(({ name }) => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        allSpots.appendChild(li);
       });
-    }
 
-    function addToHistory(picks) {
-      const li = document.createElement('li');
-      li.textContent = picks.join(', ');
-      history.unshift(li);
-      if (history.length > 5) history.pop();
-      historyList.innerHTML = '';
-      history.forEach(el => historyList.appendChild(el));
-    }
+      function pickRandom() {
+        const num = parseInt(numSelect.value, 10);
+        const picks = [];
+        const copy = [...spots];
+        for (let i = 0; i < num && copy.length; i++) {
+          const idx = Math.floor(Math.random() * copy.length);
+          picks.push(copy.splice(idx, 1)[0].name);
+        }
+        return picks;
+      }
 
-    pickBtn.addEventListener('click', () => {
-      const picks = pickRandom();
-      renderResults(picks);
-      addToHistory(picks);
-    });
-  </script>
-</body>
+      function renderResults(picks) {
+        results.innerHTML = "";
+        picks.forEach((p) => {
+          const div = document.createElement("div");
+          div.className = "card fade-in";
+          div.innerHTML = `<h2>${p}</h2>`;
+          results.appendChild(div);
+        });
+      }
+
+      function addToHistory(picks) {
+        const li = document.createElement("li");
+        li.textContent = picks.join(", ");
+        history.unshift(li);
+        if (history.length > 5) history.pop();
+        historyList.innerHTML = "";
+        history.forEach((el) => historyList.appendChild(el));
+      }
+
+      pickBtn.addEventListener("click", () => {
+        const picks = pickRandom();
+        renderResults(picks);
+        addToHistory(picks);
+      });
+    </script>
+  </body>
 </html>

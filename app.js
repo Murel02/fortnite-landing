@@ -10,13 +10,23 @@ app.use(express.static(__dirname + '/public'));
 
 // Liste med mulige landing spots
 const spots = [
-  { name: 'O.X.R HQ', description: 'Et af sæsonens hotteste spots med O.X.R-kister og Leadspitter 3000.' },
-  { name: "Demon's Debris", description: 'Stor lokation med masser af kister, Swarmer Nests og Hive Stashes.' },
-  { name: 'Rocky RVs', description: 'Nordøst for The Hive; mange kister, køretøjer, Launchpad og en Reboot Van.' },
-  { name: 'Predator Peak', description: 'Bjerg nord for Canyon Crossing med kister, Slurp-tønder, Launchpad og zipline.' },
-  { name: "Pumpin' Pipes", description: 'Syd for First Order Base; fyldt med kister, skjulesteder og god mobilitet.' },
-  { name: 'Kappa Kappa Factory', description: 'Hjørnet af kortet; mange kister, pengeskabe og et Capture Point.' },
-  { name: 'Lovely Lane', description: 'Nordvestligt hemmeligt sted; sikker og loot‑rig zone.' }
+  { name: 'The Hive' },
+  { name: 'Swarmy Stash' },
+  { name: 'Ranger\'s Ruin' },
+  { name: 'O.X.R. HQ' },
+  { name: 'Supernova Academy' },
+  { name: 'First Order Base' },
+  { name: 'Shining Span' },
+  { name: 'Utopia City' },
+  { name: 'Foxy Floodgate' },
+  { name: 'Shiny Shafts' },
+  { name: 'Outlaw Oasis' },
+  { name: 'Resistance Base' },
+  { name: 'Canyon Crossing' },
+  { name: 'Outpost Enclave' },
+  { name: 'Kappa Kappa Factory' },
+  { name: 'Shogun\'s Solitude' },
+  { name: 'Demon\'s Debris' }
 ];
 
 app.get('/', (req, res) => {

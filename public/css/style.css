@@ -1,16 +1,61 @@
+:root {
+  --bg-color: #0f172a;
+  --bg-alt:  #1e293b;
+  --text-color: #f1f5f9;
+  --accent: #4ade80;
+  --accent-hover: #16a34a;
+  --card-bg: rgba(255,255,255,0.05);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
 body {
-  font-family: sans-serif;
-  max-width: 700px;
-  margin: 40px auto;
-  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: linear-gradient(135deg, var(--bg-color), var(--bg-alt));
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 }
+
+.container {
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+h1 {
+  margin: 0 0 1rem 0;
+  font-size: 2rem;
+}
+
 button {
-  padding: 10px 15px;
-  font-size: 16px;
+  background: var(--accent);
+  color: var(--bg-color);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
 }
+
+button:hover {
+  background: var(--accent-hover);
+}
+
 .result {
-  margin-top: 20px;
-  padding: 15px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border-radius: 0.75rem;
+}
+
+.result h2 {
+  margin: 0;
+  font-size: 1.75rem;
 }

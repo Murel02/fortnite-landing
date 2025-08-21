@@ -1,48 +1,55 @@
 :root {
-  --bg: #0e0127;
-  --bg-grad: #1f055e;
-  --primary: #b03de9;
-  --primary-dark: #7a2bb5;
-  --text-light: #f3f4f6;
-  --card-bg: rgba(255,255,255,0.05);
+  --bg-start: #0b0226;
+  --bg-end:   #1a0c3b;
+  --primary:  #a938db;
+  --primary-dark: #7d2db1;
+  --accent:   #00d1ff;
+  --text-light: #e7eaf2;
+  --card-bg: rgba(255, 255, 255, 0.05);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, sans-serif;
-  background: linear-gradient(135deg, var(--bg), var(--bg-grad));
+  background: radial-gradient(circle at top, var(--bg-start), var(--bg-end));
   color: var(--text-light);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 40px 20px;
 }
 
-.container {
-  width: 100%;
-  max-width: 750px;
-}
-
-h1 {
+.hero {
   text-align: center;
-  margin-bottom: 1rem;
-  font-size: 2.5rem;
+  padding: 3rem 1rem 2rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 3rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.hero p {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 1.2rem;
+  color: var(--text-light);
 }
 
 .controls {
   display: flex;
-  gap: 10px;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-top: 1rem;
 }
 
 select, button {
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
   font-size: 1rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
   border: none;
 }
 
@@ -55,40 +62,83 @@ button {
   background: var(--primary);
   color: #fff;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s;
 }
 
 button:hover {
   background: var(--primary-dark);
 }
 
-.results, .history, .all-spots {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.map-wrapper {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
 }
 
-.card {
+#mapImg {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+.markers-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.marker-label {
+  position: absolute;
+  padding: 4px 8px;
   background: var(--card-bg);
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 0.75rem;
-  text-align: center;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  transform: translate(-50%, -120%);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.3); }
+}
+
+.bounce {
+  animation: bounce 1s infinite;
 }
 
 .section-heading {
-  margin-top: 2rem;
-  margin-bottom: 0.75rem;
-  font-size: 1.3rem;
-  border-bottom: 1px solid var(--card-bg);
-  padding-bottom: 0.3rem;
+  text-align: center;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: var(--primary);
 }
 
-.fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+.history {
+  max-width: 800px;
+  margin: 0 auto;
+  list-style: none;
+  padding: 0;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+.history li {
+  padding: 0.5rem;
+  background: var(--card-bg);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
 }

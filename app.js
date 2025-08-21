@@ -30,8 +30,7 @@ const spots = [
 ];
 
 app.get('/', (req, res) => {
-  const spot = spots[Math.floor(Math.random() * spots.length)];
-  res.render('index', { spot });
+  res.render('index', { spots });
 });
 
 // Start server (vælg port 3003, så den ikke konflikter med andre apps)

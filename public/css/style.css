@@ -5,6 +5,7 @@
   --primary-dark: #7d2db1;
   --accent: #00d1ff;
   --text-light: #e7eaf2;
+  --marker-color: red;
   --card-bg: rgba(255, 255, 255, 0.05);
 }
 
@@ -93,17 +94,6 @@ button:hover {
   pointer-events: none;
 }
 
-.marker {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 12px var(--accent);
-  transform: translate(-50%, -50%);
-  animation: pulse 1.5s infinite;
-}
-
 .marker-label {
   position: absolute;
   padding: 4px 8px;
@@ -113,6 +103,58 @@ button:hover {
   transform: translate(-50%, -120%);
   white-space: nowrap;
   backdrop-filter: blur(6px);
+}
+
+/* Layout for the map and marker */
+.map-container {
+  position: relative;
+  width: 100%;
+  max-width: 650px; /* cap width on desktop */
+  margin: 0 auto;
+}
+
+.map-container img {
+  width: 100%;
+  display: block;
+}
+
+/* Override marker style for the random drop */
+.random-marker {
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--marker-color);
+  box-shadow: 0 0 12px var(--marker-color);
+  transform: translate(-50%, -50%);
+  animation: pulse 1.5s infinite;
+  transition: left 0.5s ease-out, top 0.5s ease-out;
+}
+
+/* Buttons used on the page */
+#coordBtn,
+#randomBtn {
+  font-size: 1rem;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: none;
+  margin-top: 1rem;
+}
+
+/* Responsive adjustments for phones */
+@media (max-width: 600px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+  .map-container {
+    padding: 1rem;
+  }
+  .random-marker {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 @keyframes pulse {

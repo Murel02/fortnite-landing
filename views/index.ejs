@@ -1,43 +1,149 @@
 <!-- views/index.ejs -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Fortnite Random Drop</title>
-    <style>
-      .map-container {
-        position: relative;
-        width: 650px; /* adjust to match your actual map size */
-        margin: auto;
-      }
-      .map-container img {
-        width: 100%;
-      }
-      .marker {
-        position: absolute;
-        background: red;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-      }
-    </style>
+    <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
-    <div
-      class="marker"
-      id="marker"
-      data-x="<%= location.x %>"
-      data-y="<%= location.y %>"
-    ></div>
-    <p>Your random drop location is: <%= location.id %></p>
-  </body>
+    <!-- Hero section -->
+    <div class="hero">
+      <h1>Fortnite Random Drop</h1>
+      <p>Select a random landing spot on the Chapter 5 map.</p>
+    </div>
 
-  <script>
-    const marker = document.getElementById("marker");
-    const x = parseFloat(marker.dataset.x);
-    const y = parseFloat(marker.dataset.y);
-    marker.style.left = x * 100 + "%";
-    marker.style.top = y * 100 + "%";
-  </script>
+    <!-- Controls section -->
+    <div class="controls">
+      <!-- existing buttons -->
+      <button id="randomBtn">Pick a random spot</button>
+      <button id="coordBtn">Click the map to get coordinates</button>
+
+      <!-- new settings -->
+      <label>
+        Marker colour:
+        <input type="color" id="markerColorPicker" value="#ff0000" />
+      </label>
+      <!--<label>
+        Named locations only:
+        <input type="checkbox" id="namedOnlyToggle" checked />
+      </label>-->
+    </div>
+
+    <!-- Map container -->
+    <div class="map-wrapper">
+      <div class="map-container">
+        <img id="mapImg" src="/images/fortnite-map.png" alt="Fortnite Map" />
+        <div
+          class="random-marker"
+          id="marker"
+          data-x="<%= location.x %>"
+          data-y="<%= location.y %>"
+        ></div>
+      </div>
+    </div>
+
+    <p class="section-heading" id="locationLabel">
+      Your random drop location is: <%= location.id %>
+    </p>
+    <script>
+      const locations = [
+        { id: "Tennis banen", x: 0.78, y: 0.66 },
+        { id: "Tank stationen", x: 0.25, y: 0.33 },
+        { id: "Murel's favorit", x: 0.64, y: 0.17 },
+        { id: "Resistance Base", x: 0.24, y: 0.22 },
+        { id: "Supernova Academy", x: 0.54, y: 0.26 },
+        { id: "First Order Base", x: 0.8, y: 0.18 },
+        { id: "The Hive", x: 0.37, y: 0.33 },
+        { id: "Swarmy Stash", x: 0.54, y: 0.35 },
+        { id: "O.X.R. HQ", x: 0.65, y: 0.38 },
+        { id: "Shiny Shafts", x: 0.23, y: 0.44 },
+        { id: "Outlaw Oasis", x: 0.16, y: 0.55 },
+        { id: "Ranger's Ruin", x: 0.32, y: 0.54 },
+        { id: "Foxy Floodgate", x: 0.48, y: 0.58 },
+        { id: "Utopia City", x: 0.69, y: 0.54 },
+        { id: "Shining Span", x: 0.81, y: 0.53 },
+        { id: "Kappa Kappa Factory", x: 0.84, y: 0.73 },
+        { id: "Canyon Crossing", x: 0.31, y: 0.74 },
+        { id: "Demon's Debris", x: 0.54, y: 0.75 },
+        { id: "Shogun's Solitude", x: 0.2, y: 0.81 },
+        { id: "Outpost Enclave", x: 0.77, y: 0.81 },
+      ];
+    </script>
+    <script>
+      // Colour picker persistence
+      const markerColorPicker = document.getElementById("markerColorPicker");
+      const savedColor = localStorage.getItem("markerColor");
+      if (savedColor) {
+        document.documentElement.style.setProperty(
+          "--marker-color",
+          savedColor
+        );
+        markerColorPicker.value = savedColor;
+      }
+      markerColorPicker.addEventListener("input", (e) => {
+        const value = e.target.value;
+        document.documentElement.style.setProperty("--marker-color", value);
+        localStorage.setItem("markerColor", value);
+      });
+
+      const lastPicks = [];
+
+      // Place the initial random marker
+      const marker = document.getElementById("marker");
+      const locLabel = document.getElementById("locationLabel");
+      function positionMarker(x, y) {
+        marker.style.left = x * 100 + "%";
+        marker.style.top = y * 100 + "%";
+        marker.dataset.x = x;
+        marker.dataset.y = y;
+      }
+      // Initial position is set on the server via data-x/y attributes
+      positionMarker(
+        parseFloat(marker.dataset.x),
+        parseFloat(marker.dataset.y)
+      );
+
+      // Pick a random location from the array
+      function chooseRandomLocation() {
+        let candidate;
+        do {
+          const index = Math.floor(Math.random() * locations.length);
+          candidate = locations[index];
+        } while (lastPicks.includes(candidate.id));
+
+        // Update the history: add new ID, keep only the last 2
+        lastPicks.push(candidate.id);
+        if (lastPicks.length > 2) {
+          lastPicks.shift();
+        }
+
+        return candidate;
+      }
+
+      // Smooth animation on new spot
+      const randomBtn = document.getElementById("randomBtn");
+      randomBtn.addEventListener("click", () => {
+        const newLoc = chooseRandomLocation();
+        // Update the label
+        const locLabel = document.getElementById("locationLabel");
+        locLabel.textContent = "Your random drop location is: " + newLoc.id;
+        // Reposition the marker smoothly
+        positionMarker(newLoc.x, newLoc.y);
+        // Add a bounce effect
+        marker.classList.add("bounce");
+        setTimeout(() => marker.classList.remove("bounce"), 800);
+      });
+
+      // Optional: click‑to‑show coordinates (kept disabled here)
+      const mapImg = document.getElementById("mapImg");
+      const coordBtn = document.getElementById("coordBtn");
+      mapImg.addEventListener("click", (event) => {
+        const rect = mapImg.getBoundingClientRect();
+        const nx = (event.clientX - rect.left) / rect.width;
+        const ny = (event.clientY - rect.top) / rect.height;
+        coordBtn.textContent = `x: ${nx.toFixed(2)}, y: ${ny.toFixed(2)}`;
+      });
+    </script>
+  </body>
 </html>

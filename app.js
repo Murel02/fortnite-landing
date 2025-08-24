@@ -1,10 +1,16 @@
 const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
 const indexRoutes = require("./routes/index");
 const { getRandomLocation } = require("./models/locations");
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
-// Brug EJS som templatemotor
+let currentLocation = getRandomLocation();
+
+// View engine and static files
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
 app.use(express.static(__dirname + "/public"));
@@ -26,23 +32,24 @@ app.use((req, res, next) => {
   res.status(401).send("Authentication required.");
 });
 
-// shared state for random drop
-let currentLocation = getRandomLocation();
-
-// API route: get the current location
+// Expose the current location via API if you still want polling
 app.get("/api/current", (req, res) => {
   res.json(currentLocation);
 });
 
-// API route: request a new random location
-app.post("/api/random", (req, res) => {
-  currentLocation = getRandomLocation();
-  res.json(currentLocation);
+// Socket.IO: on connection send the current location; on newRandom update and broadcast
+io.on("connection", (socket) => {
+  socket.emit("update", currentLocation);
+
+  socket.on("newRandom", () => {
+    currentLocation = getRandomLocation();
+    io.emit("update", currentLocation);
+  });
 });
 
-// mount your page routes
+// Mount your page routes
 app.use("/", indexRoutes);
 
-// start server
+// Start the HTTP server (not app.listen)
 const port = process.env.PORT || 3003;
-app.listen(port, () => console.log(`Landing picker klar på port ${port}`));
+server.listen(port, () => console.log(`Landing picker klar på port ${port}`));

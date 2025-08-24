@@ -1,7 +1,0 @@
-// controllers/mapController.js
-const { getRandomLocation } = require('../models/locations');
-
-exports.showRandomLocation = (req, res) => {
-  const location = getRandomLocation();
-  res.render('index', { location });
-};

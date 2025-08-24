@@ -209,3 +209,7 @@ body {
     padding: 18px 0 6px;
   }
 }
+
+.control-group select {
+  padding: 0.5rem;
+}

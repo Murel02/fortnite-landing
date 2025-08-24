@@ -5,8 +5,14 @@
     <title>Fortnite Random Drop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css" />
+    <style>
+      /* tiny helper so the select aligns nicely */
+      .control-group select {
+        padding: 0.5rem;
+      }
+    </style>
   </head>
-  <body>
+  <body data-current-map="<%= currentMap || 'current' %>">
     <!-- Header / Hero -->
     <header class="hero container">
       <h1>Fortnite Random Drop</h1>
@@ -17,9 +23,21 @@
     <section class="controls container">
       <button id="randomBtn" class="btn btn-primary">Pick a random spot</button>
 
+      <button id="coordBtn" class="btn btn-primary"></button>
+
       <label class="control-group">
         <span>Marker colour</span>
         <input type="color" id="markerColorPicker" value="#ff0000" />
+      </label>
+
+      <label class="control-group">
+        <span>Map</span>
+        <select id="mapSelect" aria-label="Choose map">
+          <option value="current" data-src="/images/fortnite-map.png">
+            Chapter 6 • Season 4
+          </option>
+          <option value="og" data-src="/images/fortniteOG.png">OG Map</option>
+        </select>
       </label>
     </section>
 
@@ -38,7 +56,6 @@
           width="1300"
           height="1300"
         />
-
         <div
           class="random-marker"
           id="marker"
@@ -51,18 +68,34 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      // Marker positioning
+      // --- Config of available maps (add more here) ---
+      const MAPS = {
+        current: {
+          src: "/images/fortnite-map.png",
+          label: "Chapter 6 • Season 4",
+        },
+        og: { src: "/images/fortniteOG.png", label: "OG Map" },
+      };
+
+      // --- DOM refs ---
       const marker = document.getElementById("marker");
+      const mapImg = document.getElementById("mapImg");
+      const locationLabel = document.getElementById("locationLabel");
+      const mapSelect = document.getElementById("mapSelect");
+
+      // --- Helper: place marker by normalized coords (0..1) ---
       function positionMarker(x, y) {
         marker.style.left = x * 100 + "%";
         marker.style.top = y * 100 + "%";
       }
+
+      // --- Init marker from server-rendered data ---
       positionMarker(
         parseFloat(marker.dataset.x),
         parseFloat(marker.dataset.y)
       );
 
-      // Colour picker persistence
+      // --- Colour picker persistence ---
       const markerColorPicker = document.getElementById("markerColorPicker");
       const savedColor = localStorage.getItem("markerColor");
       if (savedColor) {
@@ -78,22 +111,56 @@
         localStorage.setItem("markerColor", value);
       });
 
-      // Socket events
+      // --- Map selection: load from localStorage or server default ---
+      const savedMapId = localStorage.getItem("mapId");
+      const serverMapId = document.body.dataset.currentMap || "current";
+      const startMapId = savedMapId || serverMapId;
+
+      function applyMap(mapId) {
+        const m = MAPS[mapId] || MAPS.current;
+        mapImg.src = m.src;
+        mapImg.alt = m.label;
+        document.body.dataset.currentMap = mapId;
+        mapSelect.value = mapId;
+        localStorage.setItem("mapId", mapId);
+      }
+
+      // Populate <select> values (ensures src attributes align)
+      for (const opt of mapSelect.options) {
+        const id = opt.value;
+        if (MAPS[id]) opt.setAttribute("data-src", MAPS[id].src);
+      }
+
+      applyMap(startMapId);
+
+      mapSelect.addEventListener("change", (e) => {
+        const mapId = e.target.value;
+        applyMap(mapId);
+        // Optional: tell server we changed map (if you want it to push a fresh random)
+        // socket.emit("mapChanged", { mapId });
+      });
+
+      // --- Socket events ---
       const socket = io();
+
+      // Server can send { id, x, y, mapId? }
       socket.on("update", (loc) => {
-        document.getElementById("locationLabel").textContent =
-          "Your random drop location is: " + loc.id;
+        if (loc.mapId && loc.mapId !== document.body.dataset.currentMap) {
+          applyMap(loc.mapId); // switch to the map that the new location belongs to
+        }
+        locationLabel.textContent = "Your random drop location is: " + loc.id;
         positionMarker(loc.x, loc.y);
         marker.classList.add("bounce-once");
         setTimeout(() => marker.classList.remove("bounce-once"), 500);
       });
 
       document.getElementById("randomBtn").addEventListener("click", () => {
-        socket.emit("newRandom");
+        const mapId = document.body.dataset.currentMap || "current";
+        // Ask the server for a new spot on the current map
+        socket.emit("newRandom", { mapId });
       });
 
-      // Optional: click map to preview coords (fixed template literal)
-      const mapImg = document.getElementById("mapImg");
+      // Optional: click map to preview coords (kept from your code)
       const coordBtn = document.getElementById("coordBtn");
       if (coordBtn) {
         mapImg.addEventListener("click", (event) => {

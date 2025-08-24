@@ -24,18 +24,20 @@
     </style>
   </head>
   <body>
-    <div class="map-container">
-      <img src="/images/fortnite-map-grid.png" alt="Fortnite Map" />
-      <div class="marker" id="marker"></div>
-    </div>
+    <div
+      class="marker"
+      id="marker"
+      data-x="<%= location.x %>"
+      data-y="<%= location.y %>"
+    ></div>
     <p>Your random drop location is: <%= location.id %></p>
   </body>
 
   <script>
-    const x = <%= location.x %>;
-    const y = <%= location.y %>;
-    const marker = document.getElementById('marker');
-    marker.style.left = (x * 100) + '%';
-    marker.style.top  = (y * 100) + '%';
+    const marker = document.getElementById("marker");
+    const x = parseFloat(marker.dataset.x);
+    const y = parseFloat(marker.dataset.y);
+    marker.style.left = x * 100 + "%";
+    marker.style.top = y * 100 + "%";
   </script>
 </html>

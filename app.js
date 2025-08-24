@@ -9,7 +9,7 @@ app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 
 // Liste med mulige landing spots
-const spots = [
+const location = [
   { name: 'The Hive',            x: 40, y: 45 },
   { name: 'Swarmy Stash',        x: 58, y: 42 },
   { name: "Ranger's Ruin",       x: 25, y: 65 },
@@ -30,7 +30,7 @@ const spots = [
 ];
 
 app.get('/', (req, res) => {
-  res.render('index', { spots });
+  res.render('index', { location });
 });
 
 

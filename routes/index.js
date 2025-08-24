@@ -1,8 +1,9 @@
-const express = require('express');
+// routes/index.js
+const express = require("express");
 const router = express.Router();
+const mapController = require("../controllers/mapController");
 
-const mapController = require('../controllers/mapController')
-
-router.get('/', mapController.showRandomLocation);
+// just handle the root page
+router.get("/", mapController.showRandomLocation);
 
 module.exports = router;

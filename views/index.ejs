@@ -71,6 +71,31 @@
       ];
     </script>
     <script>
+      // On page load, fetch the current location from the server
+      async function getCurrentLocation() {
+        const response = await fetch("/api/current");
+        return response.json();
+      }
+
+      async function getNewRandom() {
+        const response = await fetch("/api/random", { method: "POST" });
+        return response.json();
+      }
+
+      function updateMarker(loc) {
+        // Update text
+        const locLabel = document.getElementById("locationLabel");
+        locLabel.textContent = "Your random drop location is: " + loc.id;
+        // Update marker position
+        positionMarker(loc.x, loc.y);
+        // Bounce animation
+        marker.classList.add("bounce");
+        setTimeout(() => marker.classList.remove("bounce"), 800);
+      }
+
+      // Initial fetch to sync with the server
+      getCurrentLocation().then(updateMarker);
+
       // Colour picker persistence
       const markerColorPicker = document.getElementById("markerColorPicker");
       const savedColor = localStorage.getItem("markerColor");
@@ -124,15 +149,7 @@
       // Smooth animation on new spot
       const randomBtn = document.getElementById("randomBtn");
       randomBtn.addEventListener("click", () => {
-        const newLoc = chooseRandomLocation();
-        // Update the label
-        const locLabel = document.getElementById("locationLabel");
-        locLabel.textContent = "Your random drop location is: " + newLoc.id;
-        // Reposition the marker smoothly
-        positionMarker(newLoc.x, newLoc.y);
-        // Add a bounce effect
-        marker.classList.add("bounce");
-        setTimeout(() => marker.classList.remove("bounce"), 800);
+        getNewRandom().then(updateMarker);
       });
 
       // Optional: click‑to‑show coordinates (kept disabled here)

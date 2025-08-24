@@ -5,12 +5,6 @@
     <title>Fortnite Random Drop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css" />
-    <style>
-      /* tiny helper so the select aligns nicely */
-      .control-group select {
-        padding: 0.5rem;
-      }
-    </style>
   </head>
   <body data-current-map="<%= currentMap || 'current' %>">
     <!-- Header / Hero -->
@@ -22,8 +16,6 @@
     <!-- Controls -->
     <section class="controls container">
       <button id="randomBtn" class="btn btn-primary">Pick a random spot</button>
-
-      <button id="coordBtn" class="btn btn-primary"></button>
 
       <label class="control-group">
         <span>Marker colour</span>
@@ -46,7 +38,7 @@
       Your random drop location is: <%= location.id %>
     </p>
 
-    <!-- Map (full-bleed on mobile for max space) -->
+    <!-- Map -->
     <section class="map-bleed">
       <div class="map-container">
         <img
@@ -68,7 +60,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      // --- Config of available maps (add more here) ---
+      // --- Maps available ---
       const MAPS = {
         current: {
           src: "/images/fortnite-map.png",
@@ -89,7 +81,7 @@
         marker.style.top = y * 100 + "%";
       }
 
-      // --- Init marker from server-rendered data ---
+      // Init marker from server-rendered data
       positionMarker(
         parseFloat(marker.dataset.x),
         parseFloat(marker.dataset.y)
@@ -111,7 +103,10 @@
         localStorage.setItem("markerColor", value);
       });
 
-      // --- Map selection: load from localStorage or server default ---
+      // --- Socket ---
+      const socket = io();
+
+      // --- Map init (single source of truth) ---
       const savedMapId = localStorage.getItem("mapId");
       const serverMapId = document.body.dataset.currentMap || "current";
       const startMapId = savedMapId || serverMapId;
@@ -120,33 +115,39 @@
         const m = MAPS[mapId] || MAPS.current;
         mapImg.src = m.src;
         mapImg.alt = m.label;
-        document.body.dataset.currentMap = mapId;
+        document.body.dataset.current_map = mapId; // internal safety
+        document.body.dataset.currentMap = mapId; // used elsewhere
         mapSelect.value = mapId;
         localStorage.setItem("mapId", mapId);
+
+        // join that map's room on the server
+        socket.emit("joinMap", { mapId });
       }
 
-      // Populate <select> values (ensures src attributes align)
+      // Ensure <option> has src attributes (not strictly needed but nice)
       for (const opt of mapSelect.options) {
         const id = opt.value;
         if (MAPS[id]) opt.setAttribute("data-src", MAPS[id].src);
       }
 
+      // Apply starting map and join its room
       applyMap(startMapId);
 
+      // Dropdown: switch room + swap image
       mapSelect.addEventListener("change", (e) => {
-        const mapId = e.target.value;
-        applyMap(mapId);
-        // Optional: tell server we changed map (if you want it to push a fresh random)
-        // socket.emit("mapChanged", { mapId });
+        applyMap(e.target.value);
       });
 
-      // --- Socket events ---
-      const socket = io();
+      // Roll a new spot inside the user's current room
+      document.getElementById("randomBtn").addEventListener("click", () => {
+        const mapId = document.body.dataset.currentMap || "current";
+        socket.emit("newRandom", { mapId });
+      });
 
-      // Server can send { id, x, y, mapId? }
+      // Receive updates for the current room
       socket.on("update", (loc) => {
         if (loc.mapId && loc.mapId !== document.body.dataset.currentMap) {
-          applyMap(loc.mapId); // switch to the map that the new location belongs to
+          applyMap(loc.mapId);
         }
         locationLabel.textContent = "Your random drop location is: " + loc.id;
         positionMarker(loc.x, loc.y);
@@ -154,13 +155,7 @@
         setTimeout(() => marker.classList.remove("bounce-once"), 500);
       });
 
-      document.getElementById("randomBtn").addEventListener("click", () => {
-        const mapId = document.body.dataset.currentMap || "current";
-        // Ask the server for a new spot on the current map
-        socket.emit("newRandom", { mapId });
-      });
-
-      // Optional: click map to preview coords (kept from your code)
+      // Optional: click map to preview coords
       const coordBtn = document.getElementById("coordBtn");
       if (coordBtn) {
         mapImg.addEventListener("click", (event) => {

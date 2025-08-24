@@ -26,22 +26,47 @@ app.use((req, res, next) => {
   res.status(401).send("Authentication required.");
 });
 
-// Optional: expose current (last rolled) location
-let currentLocation = getRandomLocation("current");
-let currentMapId = "current";
-app.get("/api/current", (_req, res) =>
-  res.json({ ...currentLocation, mapId: currentMapId })
+//Keep spearate state per map/room
+const MAP_IDS = ["current", "og"];
+const stateByMap = Object.fromEntries(
+  MAP_IDS.map((id) => [id, { mapId: id, location: getRandomLocation(id) }])
 );
 
-// Socket.IO: new roll per requested map; broadcast to all clients
-io.on("connection", (socket) => {
-  // Send the current state to the newly connected client (optional)
-  socket.emit("update", { ...currentLocation, mapId: currentMapId });
+// Optional: quick API for debugging
+app.get("/api/current", (req, res) => {
+  const mapId = req.query.mapId || "current";
+  const state = stateByMap[mapId] || stateByMap.current;
+  res.json(state);
+});
 
-  socket.on("newRandom", ({ mapId = "current" } = {}) => {
-    currentMapId = mapId;
-    currentLocation = getRandomLocation(mapId); // { id, x, y }
-    io.emit("update", { ...currentLocation, mapId }); // sync everyone
+// --- Socket.IO ---
+io.on("connection", (socket) => {
+  let joinedMap = null;
+
+  // Client tells us which map they’re looking at
+  socket.on("joinMap", ({ mapId = "current" } = {}) => {
+    // leave previous room, join the new one
+    if (joinedMap) socket.leave(joinedMap);
+    joinedMap = MAP_IDS.includes(mapId) ? mapId : "current";
+    socket.join(joinedMap);
+
+    // send the current state of that map to just this client
+    const { location } = stateByMap[joinedMap];
+    socket.emit("update", { ...location, mapId: joinedMap });
+  });
+
+  // Roll a new random for the active map; broadcast only to that room
+  socket.on("newRandom", ({ mapId = joinedMap || "current" } = {}) => {
+    const room = MAP_IDS.includes(mapId) ? mapId : "current";
+    const location = getRandomLocation(room);
+    stateByMap[room].location = location;
+    io.to(room).emit("update", { ...location, mapId: room });
+  });
+
+  // (Optional) allow a manual switch event
+  socket.on("switchMap", ({ mapId }) => {
+    socket.emit("ack", { switchedTo: mapId });
+    socket.emit("update", { ...stateByMap[mapId]?.location, mapId });
   });
 });
 

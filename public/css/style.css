@@ -213,3 +213,30 @@ body {
 .control-group select {
   padding: 0.5rem;
 }
+
+/* Form controls */
+.control-group input[type="color"],
+.control-group select {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-light);
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.control-group select option {
+  background: #1a0c3b;
+  color: var(--text-light);
+}
+
+/* make color input circular */
+.control-group input[type="color"] {
+  padding: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+}

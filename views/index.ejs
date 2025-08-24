@@ -1,54 +1,57 @@
-<!-- views/index.ejs -->
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Fortnite Random Drop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
-    <!-- Hero section -->
-    <div class="hero">
+    <!-- Header / Hero -->
+    <header class="hero container">
       <h1>Fortnite Random Drop</h1>
-    </div>
+      <p class="subtitle">Pick a spot and drop in!</p>
+    </header>
 
-    <!-- Controls section -->
-    <div class="controls">
-      <!-- existing buttons -->
-      <button id="randomBtn">Pick a random spot</button>
-      <!--<button id="coordBtn">Click the map to get coordinates</button>-->
+    <!-- Controls -->
+    <section class="controls container">
+      <button id="randomBtn" class="btn btn-primary">Pick a random spot</button>
 
-      <!-- new settings -->
-      <label>
-        Marker colour:
+      <label class="control-group">
+        <span>Marker colour</span>
         <input type="color" id="markerColorPicker" value="#ff0000" />
       </label>
-      <!--<label>
-        Named locations only:
-        <input type="checkbox" id="namedOnlyToggle" checked />
-      </label>-->
-    </div>
+    </section>
 
-    <!-- Map container -->
-    <div class="map-wrapper">
+    <!-- Selected location -->
+    <p class="section-heading container" id="locationLabel">
+      Your random drop location is: <%= location.id %>
+    </p>
+
+    <!-- Map (full-bleed on mobile for max space) -->
+    <section class="map-bleed">
       <div class="map-container">
-        <img id="mapImg" src="/images/fortnite-map.png" alt="Fortnite Map" />
+        <img
+          id="mapImg"
+          src="/images/fortnite-map.png"
+          alt="Fortnite Map"
+          width="1300"
+          height="1300"
+        />
+
         <div
           class="random-marker"
           id="marker"
           data-x="<%= location.x %>"
           data-y="<%= location.y %>"
+          aria-label="Selected drop location"
         ></div>
       </div>
-    </div>
+    </section>
 
-    <p class="section-heading" id="locationLabel">
-      Your random drop location is: <%= location.id %>
-    </p>
     <script src="/socket.io/socket.io.js"></script>
-
     <script>
-      // Grab the marker and position it based on server-rendered data
+      // Marker positioning
       const marker = document.getElementById("marker");
       function positionMarker(x, y) {
         marker.style.left = x * 100 + "%";
@@ -59,7 +62,7 @@
         parseFloat(marker.dataset.y)
       );
 
-      // Colour picker persistence (unchanged)
+      // Colour picker persistence
       const markerColorPicker = document.getElementById("markerColorPicker");
       const savedColor = localStorage.getItem("markerColor");
       if (savedColor) {
@@ -75,24 +78,21 @@
         localStorage.setItem("markerColor", value);
       });
 
-      // Connect to Socket.IO
+      // Socket events
       const socket = io();
-
-      // Update the UI whenever the server broadcasts a new location
       socket.on("update", (loc) => {
         document.getElementById("locationLabel").textContent =
           "Your random drop location is: " + loc.id;
         positionMarker(loc.x, loc.y);
-        marker.classList.add("bounce");
-        setTimeout(() => marker.classList.remove("bounce"), 800);
+        marker.classList.add("bounce-once");
+        setTimeout(() => marker.classList.remove("bounce-once"), 500);
       });
 
-      // Emit 'newRandom' when the button is pressed
       document.getElementById("randomBtn").addEventListener("click", () => {
         socket.emit("newRandom");
       });
 
-      // Optional: click‑to‑show coordinates
+      // Optional: click map to preview coords (fixed template literal)
       const mapImg = document.getElementById("mapImg");
       const coordBtn = document.getElementById("coordBtn");
       if (coordBtn) {

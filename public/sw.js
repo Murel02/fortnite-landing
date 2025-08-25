@@ -1,16 +1,14 @@
-// sw.js
-const CACHE = "drop-picker-v2";
+// /public/sw.js
+const CACHE = "drop-picker-v4"; // <-- bump this
 const ASSETS = [
-  "/",
-  "/app",
-  "/css/style.css",
+  "/", // keep the shell
   "/images/fortnite-map.png",
   "/images/fortniteOG.png",
   "/manifest.webmanifest",
   "/socket.io/socket.io.js",
 ];
 
-// Install & cache
+// Install & cache (no CSS here on purpose)
 self.addEventListener("install", (e) => {
   e.waitUntil(
     caches
@@ -42,7 +40,7 @@ self.addEventListener("fetch", (e) => {
   // Don't interfere with socket transports
   if (url.pathname.startsWith("/socket.io")) return;
 
-  // Navigations (HTML)
+  // HTML navigations
   if (e.request.mode === "navigate") {
     e.respondWith(
       (async () => {
@@ -50,12 +48,25 @@ self.addEventListener("fetch", (e) => {
           return (await e.preloadResponse) || (await fetch(e.request));
         } catch {
           return (
-            (await caches.match("/app")) ||
             (await caches.match("/")) ||
             new Response("Offline", { status: 503 })
           );
         }
       })()
+    );
+    return;
+  }
+
+  // CSS → network-first (so style changes appear at once)
+  if (url.pathname.startsWith("/css/")) {
+    e.respondWith(
+      fetch(e.request)
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+          return resp;
+        })
+        .catch(() => caches.match(e.request))
     );
     return;
   }

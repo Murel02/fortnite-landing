@@ -9,7 +9,7 @@
   --marker-color: #ff2a2a;
 }
 
-/* Light theme palette override */
+/* Light theme */
 :root[data-theme="light"] {
   --bg-start: #f5f7ff;
   --bg-end: #e8ecfb;
@@ -64,7 +64,7 @@ body {
   padding-inline: clamp(12px, 4vw, 24px);
 }
 
-/* --- Header --- */
+/* Header */
 .hero--compact {
   padding: 10px 0 0;
 }
@@ -96,7 +96,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-/* --- Map --- */
+/* Map */
 .map-container {
   position: relative;
   width: 100%;
@@ -112,7 +112,7 @@ body {
   height: auto;
 }
 
-/* Location pill over map */
+/* Location pill */
 .location-pill {
   position: absolute;
   left: 50%;
@@ -135,7 +135,7 @@ body {
   font-weight: 500;
 }
 
-/* --- Marker --- */
+/* Marker */
 .random-marker {
   position: absolute;
   width: clamp(20px, 5vw, 28px);
@@ -153,7 +153,6 @@ body {
   animation: marker-bounce 0.5s ease;
 }
 
-/* Marker animations */
 @keyframes pulse {
   0% {
     transform: translate(-50%, -50%) scale(0.85);
@@ -180,7 +179,7 @@ body {
   }
 }
 
-/* --- Big Drop Button --- */
+/* Big Drop button */
 .bottom-bar {
   position: fixed;
   left: 0;
@@ -190,8 +189,8 @@ body {
 }
 .primary-cta {
   width: 100vw;
-  height: 72px; /* big for thumbs */
-  font-size: 1.6rem; /* large text/emoji */
+  height: calc(72px + env(safe-area-inset-bottom));
+  font-size: 1.6rem;
   font-weight: 800;
   border: 0;
   border-radius: 0;
@@ -203,15 +202,15 @@ body {
   transform: translateY(1px);
 }
 
-/* --- Bottom sheet (for controls) --- */
+/* Bottom sheet */
 .sheet {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 72px; /* sits above Drop button */
+  bottom: calc(72px + env(safe-area-inset-bottom));
   z-index: 35;
   transition: transform 0.28s ease;
-  transform: translateY(calc(100% - 72px)); /* collapsed height */
+  transform: translateY(calc(100% - 72px));
 }
 .sheet.open {
   transform: translateY(0);
@@ -278,7 +277,22 @@ body {
   color: var(--text-light);
 }
 
-/* Tap-friendly inputs */
+/* Small generic button for the Install action */
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-secondary {
+  background: var(--card-bg);
+  color: var(--text-light);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Touch-friendly */
 .primary-cta,
 .icon-btn,
 .control-row select,

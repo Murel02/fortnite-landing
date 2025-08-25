@@ -50,19 +50,25 @@
       </div>
     </main>
 
-    <!-- Bottom bar: primary action -->
+    <!-- Big bottom CTA -->
     <div class="bottom-bar">
       <button id="fabRandom" class="primary-cta" aria-label="Pick random">
         🎲 Drop
       </button>
     </div>
 
+    <!-- Bottom sheet controls -->
     <section class="sheet" id="sheet">
-      <button class="sheet-handle" id="sheetToggle">
+      <button
+        class="sheet-handle"
+        id="sheetToggle"
+        aria-expanded="false"
+        aria-controls="sheetContent"
+      >
         <span class="handle-dot"></span>
       </button>
 
-      <div class="sheet-content">
+      <div class="sheet-content" id="sheetContent">
         <div class="control-row">
           <label>
             Marker Color
@@ -71,7 +77,7 @@
 
           <label>
             Map
-            <select id="mapSelect">
+            <select id="mapSelect" aria-label="Choose map">
               <option value="current">Chapter 6 • Season 4</option>
               <option value="og">OG Map</option>
             </select>
@@ -86,7 +92,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      // ---- THEME (load saved + button) ----
+      // --- THEME ---
       const themeBtn = document.getElementById("themeToggle");
       const themeMeta = document.querySelector('meta[name="theme-color"]');
 
@@ -97,18 +103,6 @@
         setThemeIcon();
         applyThemeMeta();
       })();
-
-      // ADD this haptics helper near the top of your script
-      function ping() {
-        if (navigator.vibrate) navigator.vibrate(80);
-      }
-
-      const sheet = document.getElementById("sheet");
-      const sheetToggle = document.getElementById("sheetToggle");
-      sheetToggle.addEventListener("click", () => {
-        const open = sheet.classList.toggle("open");
-        sheetToggle.setAttribute("aria-expanded", String(open));
-      });
 
       function setThemeIcon() {
         const isLight =
@@ -129,6 +123,15 @@
         applyThemeMeta();
       });
 
+      // --- Bottom sheet toggle ---
+      const sheet = document.getElementById("sheet");
+      const sheetToggle = document.getElementById("sheetToggle");
+      sheetToggle.addEventListener("click", () => {
+        const open = sheet.classList.toggle("open");
+        sheetToggle.setAttribute("aria-expanded", String(open));
+      });
+
+      // --- Copy location on tap ---
       const locTextEl = document.getElementById("locationText");
       locTextEl.style.cursor = "pointer";
       locTextEl.title = "Tap to copy";
@@ -138,6 +141,11 @@
         } catch {}
         if (navigator.vibrate) navigator.vibrate(40);
       });
+
+      // --- Haptics helper ---
+      function ping() {
+        if (navigator.vibrate) navigator.vibrate(80);
+      }
 
       // --- Maps available ---
       const MAPS = {
@@ -151,7 +159,6 @@
       // --- DOM refs ---
       const marker = document.getElementById("marker");
       const mapImg = document.getElementById("mapImg");
-
       const mapSelect = document.getElementById("mapSelect");
 
       function positionMarker(x, y) {
@@ -159,13 +166,13 @@
         marker.style.top = y * 100 + "%";
       }
 
-      // Init marker from server-rendered data
+      // Init marker from server data
       positionMarker(
         parseFloat(marker.dataset.x),
         parseFloat(marker.dataset.y)
       );
 
-      // --- Colour picker persistence ---
+      // --- Color picker persistence ---
       const markerColorPicker = document.getElementById("markerColorPicker");
       const savedColor = localStorage.getItem("markerColor");
       if (savedColor) {
@@ -181,10 +188,10 @@
         localStorage.setItem("markerColor", value);
       });
 
-      // --- Socket (PUBLIC endpoint) ---
+      // --- Socket ---
       const socket = io();
 
-      // --- Map init (single source of truth) ---
+      // --- Map init ---
       const savedMapId = localStorage.getItem("mapId");
       const serverMapId = document.body.dataset.currentMap || "current";
       const startMapId = savedMapId || serverMapId;
@@ -199,17 +206,10 @@
         localStorage.setItem("mapId", mapId);
         socket.emit("joinMap", { mapId });
       }
-
-      for (const opt of mapSelect.options) {
-        const id = opt.value;
-        if (MAPS[id]) opt.setAttribute("data-src", MAPS[id].src);
-      }
-
       applyMap(startMapId);
-
       mapSelect.addEventListener("change", (e) => applyMap(e.target.value));
 
-      // FAB: trigger new random
+      // Drop action
       const fab = document.getElementById("fabRandom");
       fab.addEventListener("click", () => {
         const mapId = document.body.dataset.currentMap || "current";
@@ -219,18 +219,16 @@
 
       // Socket updates
       socket.on("update", (loc) => {
-        if (loc.mapId && loc.mapId !== document.body.dataset.currentMap) {
+        if (loc.mapId && loc.mapId !== document.body.dataset.currentMap)
           applyMap(loc.mapId);
-        }
-        document.getElementById("locationText").textContent = loc.id; // pill overlay
-
+        document.getElementById("locationText").textContent = loc.id;
         positionMarker(loc.x, loc.y);
         marker.classList.add("bounce-once");
         setTimeout(() => marker.classList.remove("bounce-once"), 500);
         ping();
       });
 
-      // ---- PWA registration + install prompt (robust order) ----
+      // --- PWA install flow ---
       const installBtn = document.getElementById("installBtn");
       let deferredPrompt = null;
 
@@ -254,7 +252,6 @@
       }
 
       window.addEventListener("beforeinstallprompt", (e) => {
-        console.log("[PWA] beforeinstallprompt");
         e.preventDefault();
         deferredPrompt = e;
         installBtn.hidden = false;
@@ -263,18 +260,13 @@
       installBtn.addEventListener("click", async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log("[PWA] userChoice:", outcome);
+        await deferredPrompt.userChoice;
         deferredPrompt = null;
         installBtn.hidden = true;
       });
 
       window.addEventListener("appinstalled", () =>
         console.log("[PWA] appinstalled")
-      );
-      console.log(
-        "[PWA] display-mode:",
-        isStandalone ? "standalone" : "browser"
       );
     </script>
   </body>

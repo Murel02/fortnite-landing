@@ -138,10 +138,6 @@ body {
   padding-inline: clamp(12px, 4vw, 24px);
 }
 
-/* Full-bleed map on mobile for max space */
-.map-bleed {
-  /* allows the child to go edge-to-edge on small screens */
-}
 .map-container {
   position: relative;
   width: 100%;
@@ -358,16 +354,18 @@ body {
 }
 .primary-cta {
   pointer-events: auto;
-  width: min(560px, 92vw);
-  height: 48px;
-  border-radius: 14px;
-  border: 0;
+  width: 100%;
+  max-width: none;
+  height: 64px;
+  font-size: 1.3rem;
   font-weight: 800;
-  font-size: 1.05rem;
+  border-radius: 0; /* edge-to-edge */
+  border: 0;
   color: #fff;
   background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35);
 }
+
 .primary-cta:active {
   transform: translateY(1px);
 }
@@ -408,13 +406,44 @@ body {
 }
 
 .sheet-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   background: var(--card-bg);
   backdrop-filter: blur(8px) saturate(120%);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 8px 12px 12px;
+  padding: 16px;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
-  padding-bottom: 14px;
+}
+
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+.control-row label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+.control-row input[type="color"] {
+  margin-top: 6px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+}
+.control-row select {
+  margin-top: 6px;
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--card-bg);
+  color: var(--text-light);
 }
 
 .row {

@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="theme-color" content="#0b0226" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Fortnite Random Drop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css" />
@@ -11,11 +13,15 @@
     <header class="hero container">
       <h1>Fortnite Random Drop</h1>
       <p class="subtitle">Pick a spot and drop in!</p>
+      <button id="themeToggle" class="btn" aria-label="Toggle theme">🌙</button>
     </header>
 
     <!-- Controls -->
     <section class="controls container">
-      <button id="randomBtn" class="btn btn-primary">Pick a random spot</button>
+      <!-- <button id="randomBtn" class="btn btn-primary">Pick a random spot</button> -->
+      <button id="fabRandom" class="fab" aria-label="Pick random">
+        🎲 Drop
+      </button>
 
       <label class="control-group">
         <span>Marker colour</span>
@@ -57,9 +63,49 @@
         ></div>
       </div>
     </section>
+    <footer>
+      <button id="installBtn" class="btn" hidden>Install app</button>
+    </footer>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+      // ---- THEME (load saved + button) ----
+      const themeBtn = document.getElementById("themeToggle");
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+      // Apply saved (or system) theme on boot
+      (function initTheme() {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme)
+          document.documentElement.setAttribute("data-theme", savedTheme);
+        setThemeIcon();
+        applyThemeMeta();
+      })();
+
+      function setThemeIcon() {
+        const isLight =
+          document.documentElement.getAttribute("data-theme") === "light";
+        themeBtn.textContent = isLight ? "🌞" : "🌙";
+      }
+      function applyThemeMeta() {
+        const isLight =
+          document.documentElement.getAttribute("data-theme") === "light";
+        themeMeta.setAttribute("content", isLight ? "#ffffff" : "#0b0226");
+      }
+      themeBtn.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+        setThemeIcon();
+        applyThemeMeta();
+      });
+
+      // ---- Haptics ----
+      function ping() {
+        if (navigator.vibrate) navigator.vibrate(80);
+      }
+
       // --- Maps available ---
       const MAPS = {
         current: {
@@ -68,6 +114,12 @@
         },
         og: { src: "/images/fortniteOG.png", label: "OG Map" },
       };
+
+      // Optionally load smaller images on phones (faster)
+      if (window.innerWidth < 640) {
+        MAPS.current.src = "/images/fortnite-map-800.png";
+        MAPS.og.src = "/images/fortniteOG-800.png";
+      }
 
       // --- DOM refs ---
       const marker = document.getElementById("marker");
@@ -115,16 +167,14 @@
         const m = MAPS[mapId] || MAPS.current;
         mapImg.src = m.src;
         mapImg.alt = m.label;
-        document.body.dataset.current_map = mapId; // internal safety
-        document.body.dataset.currentMap = mapId; // used elsewhere
+        document.body.dataset.current_map = mapId;
+        document.body.dataset.currentMap = mapId;
         mapSelect.value = mapId;
         localStorage.setItem("mapId", mapId);
-
-        // join that map's room on the server
         socket.emit("joinMap", { mapId });
       }
 
-      // Ensure <option> has src attributes (not strictly needed but nice)
+      // Ensure <option> has src attributes (nice-to-have)
       for (const opt of mapSelect.options) {
         const id = opt.value;
         if (MAPS[id]) opt.setAttribute("data-src", MAPS[id].src);
@@ -134,14 +184,14 @@
       applyMap(startMapId);
 
       // Dropdown: switch room + swap image
-      mapSelect.addEventListener("change", (e) => {
-        applyMap(e.target.value);
-      });
+      mapSelect.addEventListener("change", (e) => applyMap(e.target.value));
 
-      // Roll a new spot inside the user's current room
-      document.getElementById("randomBtn").addEventListener("click", () => {
+      // FAB: trigger new random
+      const fab = document.getElementById("fabRandom");
+      fab.addEventListener("click", () => {
         const mapId = document.body.dataset.currentMap || "current";
         socket.emit("newRandom", { mapId });
+        ping();
       });
 
       // Receive updates for the current room
@@ -153,9 +203,10 @@
         positionMarker(loc.x, loc.y);
         marker.classList.add("bounce-once");
         setTimeout(() => marker.classList.remove("bounce-once"), 500);
+        ping();
       });
 
-      // Optional: click map to preview coords
+      // Optional: click map to preview coords (if you add a coordBtn)
       const coordBtn = document.getElementById("coordBtn");
       if (coordBtn) {
         mapImg.addEventListener("click", (event) => {
@@ -165,6 +216,26 @@
           coordBtn.textContent = `x: ${nx.toFixed(2)}, y: ${ny.toFixed(2)}`;
         });
       }
+
+      // ---- PWA registration + install prompt ----
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js");
+      }
+
+      let deferredPrompt;
+      const installBtn = document.getElementById("installBtn");
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.hidden = false;
+      });
+      installBtn.addEventListener("click", async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBtn.hidden = true;
+      });
     </script>
   </body>
 </html>

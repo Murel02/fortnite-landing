@@ -1,0 +1,48 @@
+{
+  "id": "/",
+  "name": "Fortnite Random Drop",
+  "short_name": "Drop Picker",
+  "description": "Pick fair, random drop spots for your squad.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#0b0226",
+  "theme_color": "#0b0226",
+  "icons": [
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Random (current)",
+      "short_name": "Random",
+      "url": "/?do=random&map=current",
+      "icons": [{ "src": "/icons/maskable-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Switch to OG",
+      "short_name": "OG Map",
+      "url": "/?map=og",
+      "icons": [{ "src": "/icons/maskable-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["games", "productivity"],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": { "title": "title", "text": "text" }
+  }
+}

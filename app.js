@@ -12,9 +12,22 @@ const io = socketIo(server);
 // View engine and static files
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
-app.use(express.static(__dirname + "/public"));
 
-// Simple Basic Auth (protects dynamic routes below)
+// Serve static with sensible caching (images/css can be cached)
+app.use(
+  express.static(__dirname + "/public", {
+    maxAge: "7d",
+    setHeaders: (res, path) => {
+      if (path.endsWith("sw.js")) {
+        res.setHeader("Cache-Control", "no-cache"); // ensure updates
+      }
+    },
+  })
+);
+
+app.use(express.urlencoded({ extended: true }));
+
+// Simple Basic Auth (protect dynamic routes below)
 app.use((req, res, next) => {
   const auth = { user: "fortnite", pass: "Medina" };
   const b64auth = (req.headers.authorization || "").split(" ")[1] || "";
@@ -24,6 +37,12 @@ app.use((req, res, next) => {
   if (login === auth.user && password === auth.pass) return next();
   res.set("WWW-Authenticate", 'Basic realm="Fortnite Random Drop"');
   res.status(401).send("Authentication required.");
+});
+
+// Share target → use text as a seed (optional; adapt to your RNG)
+app.post("/share", (req, res) => {
+  const seed = (req.body.text || req.body.title || "").trim();
+  res.redirect(`/?seed=${encodeURIComponent(seed)}`);
 });
 
 //Keep spearate state per map/room

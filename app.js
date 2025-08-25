@@ -1,3 +1,13 @@
+// app.js (server)
+const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
+const indexRoutes = require("./routes/index");
+const { getRandomLocation } = require("./models/locations");
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+
 // View engine and static files
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");

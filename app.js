@@ -22,6 +22,8 @@ app.use(
     maxAge: "7d",
     setHeaders: (res, p) => {
       if (p.endsWith("sw.js")) res.setHeader("Cache-Control", "no-cache");
+      if (p.endsWith(".webmanifest"))
+        res.setHeader("Content-Type", "application/manifest+json");
     },
   })
 );

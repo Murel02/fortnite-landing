@@ -9,43 +9,30 @@
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body data-current-map="<%= currentMap || 'current' %>">
-    <!-- Header / Hero -->
-    <header class="hero container">
-      <h1>Fortnite Random Drop</h1>
-      <p class="subtitle">Pick a spot and drop in!</p>
-      <button id="themeToggle" class="btn" aria-label="Toggle theme">🌙</button>
+    <!-- Header -->
+    <header class="hero container hero--compact">
+      <div class="hero__bar">
+        <h1 class="app-title">Drop Picker</h1>
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
+          🌙
+        </button>
+      </div>
     </header>
 
-    <!-- Controls -->
-    <section class="controls container">
-      <button id="fabRandom" class="fab" aria-label="Pick random">
-        🎲 Drop
-      </button>
-
-      <label class="control-group">
-        <span>Marker colour</span>
-        <input type="color" id="markerColorPicker" value="#ff0000" />
-      </label>
-
-      <label class="control-group">
-        <span>Map</span>
-        <select id="mapSelect" aria-label="Choose map">
-          <option value="current" data-src="/images/fortnite-map.png">
-            Chapter 6 • Season 4
-          </option>
-          <option value="og" data-src="/images/fortniteOG.png">OG Map</option>
-        </select>
-      </label>
-    </section>
-
-    <!-- Selected location -->
-    <p class="section-heading container" id="locationLabel">
-      Your random drop location is: <%= location.id %>
-    </p>
-
     <!-- Map -->
-    <section class="map-bleed">
+    <main class="map-bleed">
       <div class="map-container">
+        <!-- Location pill overlay -->
+        <div
+          id="locationPill"
+          class="location-pill"
+          role="status"
+          aria-live="polite"
+        >
+          <span class="pill-label">Drop:</span>
+          <span id="locationText"><%= location.id %></span>
+        </div>
+
         <img
           id="mapImg"
           src="/images/fortnite-map.png"
@@ -61,11 +48,53 @@
           aria-label="Selected drop location"
         ></div>
       </div>
-    </section>
+    </main>
 
-    <footer class="container" style="text-align: center; padding: 12px 0 24px">
-      <button id="installBtn" class="btn" hidden>Install app</button>
-    </footer>
+    <!-- Bottom bar: primary action -->
+    <div class="bottom-bar">
+      <button id="fabRandom" class="primary-cta" aria-label="Pick random">
+        🎲 Drop
+      </button>
+    </div>
+
+    <!-- Bottom sheet: controls (collapsed by default) -->
+    <section class="sheet" id="sheet">
+      <button
+        class="sheet-handle"
+        id="sheetToggle"
+        aria-expanded="false"
+        aria-controls="sheetContent"
+      >
+        <span class="handle-dot"></span>
+      </button>
+
+      <div class="sheet-content" id="sheetContent">
+        <div class="row">
+          <label class="control-group">
+            <span>Marker</span>
+            <input type="color" id="markerColorPicker" value="#ff0000" />
+          </label>
+
+          <label class="control-group control-group--grow">
+            <span>Map</span>
+            <select id="mapSelect" aria-label="Choose map">
+              <option value="current" data-src="/images/fortnite-map.png">
+                Chapter 6 • Season 4
+              </option>
+              <option value="og" data-src="/images/fortniteOG.png">
+                OG Map
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row row--end">
+          <button id="installBtn" class="btn btn-secondary" hidden>
+            Install app
+          </button>
+        </div>
+      </div>
+    </section>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -80,6 +109,18 @@
         setThemeIcon();
         applyThemeMeta();
       })();
+
+      // ADD this haptics helper near the top of your script
+      function ping() {
+        if (navigator.vibrate) navigator.vibrate(80);
+      }
+
+      const sheet = document.getElementById("sheet");
+      const sheetToggle = document.getElementById("sheetToggle");
+      sheetToggle.addEventListener("click", () => {
+        const open = sheet.classList.toggle("open");
+        sheetToggle.setAttribute("aria-expanded", String(open));
+      });
 
       function setThemeIcon() {
         const isLight =
@@ -100,10 +141,15 @@
         applyThemeMeta();
       });
 
-      // ---- Haptics ----
-      function ping() {
-        if (navigator.vibrate) navigator.vibrate(80);
-      }
+      const locTextEl = document.getElementById("locationText");
+      locTextEl.style.cursor = "pointer";
+      locTextEl.title = "Tap to copy";
+      locTextEl.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(locTextEl.textContent);
+        } catch {}
+        if (navigator.vibrate) navigator.vibrate(40);
+      });
 
       // --- Maps available ---
       const MAPS = {
@@ -117,7 +163,7 @@
       // --- DOM refs ---
       const marker = document.getElementById("marker");
       const mapImg = document.getElementById("mapImg");
-      const locationLabel = document.getElementById("locationLabel");
+
       const mapSelect = document.getElementById("mapSelect");
 
       function positionMarker(x, y) {
@@ -188,7 +234,8 @@
         if (loc.mapId && loc.mapId !== document.body.dataset.currentMap) {
           applyMap(loc.mapId);
         }
-        locationLabel.textContent = "Your random drop location is: " + loc.id;
+        document.getElementById("locationText").textContent = loc.id; // pill overlay
+
         positionMarker(loc.x, loc.y);
         marker.classList.add("bounce-once");
         setTimeout(() => marker.classList.remove("bounce-once"), 500);

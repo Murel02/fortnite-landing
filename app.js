@@ -16,7 +16,6 @@ const io = socketIo(server, {
   pingTimeout: 25000, // consider dead if no pong in 25s
 });
 
-
 // --- View engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -27,7 +26,7 @@ app.use(
     maxAge: "7d",
     setHeaders: (res, p) => {
       if (p.endsWith("sw.js")) res.setHeader("Cache-Control", "no-cache");
-      if (p.endsWith(".css")) res.setHeader("Cache-Control", "no-cache"); 
+      if (p.endsWith(".css")) res.setHeader("Cache-Control", "no-cache");
       if (p.endsWith(".webmanifest"))
         res.setHeader("Content-Type", "application/manifest+json");
     },
@@ -98,21 +97,33 @@ app.use("/", indexRoutes);
 // Socket.IO (PUBLIC endpoint)
 // ===========================
 io.on("connection", (socket) => {
-  let joinedMap = null;
-
-  socket.on("joinMap", ({ mapId = "current" } = {}) => {
-    if (joinedMap) socket.leave(joinedMap);
-    joinedMap = MAP_IDS.includes(mapId) ? mapId : "current";
-    socket.join(joinedMap);
-    const { location } = stateByMap[joinedMap];
-    socket.emit("update", { ...location, mapId: joinedMap });
+  let joinedMap = "current";
+  socket.join(joinedMap);
+  socket.emit("update", {
+    ...stateByMap[joinedMap].location,
+    mapId: joinedMap,
   });
 
-  socket.on("newRandom", ({ mapId = joinedMap || "current" } = {}) => {
+  socket.on("joinMap", ({ mapId = "current" } = {}) => {
+    socket.leave(joinedMap);
+    joinedMap = MAP_IDS.includes(mapId) ? mapId : "current";
+    socket.join(joinedMap);
+    socket.emit("update", {
+      ...stateByMap[joinedMap].location,
+      mapId: joinedMap,
+    });
+  });
+
+  socket.on("newRandom", ({ mapId = joinedMap } = {}) => {
     const room = MAP_IDS.includes(mapId) ? mapId : "current";
     const location = getRandomLocation(room);
     stateByMap[room].location = location;
     io.to(room).emit("update", { ...location, mapId: room });
+  });
+
+  socket.on("connect_error", () => {
+    ensureConnected(); // try again if the radio/OS was flaky
+    joinCurrentRoom(); // re-send room in case state got lost
   });
 });
 

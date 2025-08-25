@@ -209,9 +209,17 @@
 
       // Watchdog: reload if app was frozen for too long
       let lastAlive = Date.now();
-      const STALE_MS = 90 * 1000;
+      const STALE_MS = 45 * 1000;
 
-      socket.on("connect", () => (lastAlive = Date.now()));
+      function joinCurrentRoom() {
+        const mapId = document.body.dataset.currentMap || "current";
+        socket.emit("joinMap", { mapId });
+      }
+      // replace your existing reconnect handler with this:
+      socket.on("connect", () => {
+        lastAlive = Date.now();
+        joinCurrentRoom(); // <-- make sure we’re in the room on any (re)connect
+      });
       socket.on("update", () => (lastAlive = Date.now()));
 
       window.addEventListener("visibilitychange", () => {
@@ -225,6 +233,8 @@
         if (e.persisted) return location.reload();
         ensureConnected();
       });
+
+      window.addEventListener("focus", joinCurrentRoom);
 
       window.addEventListener("online", ensureConnected);
 

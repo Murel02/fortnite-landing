@@ -232,6 +232,13 @@
         });
       }
 
+      window.addEventListener("beforeinstallprompt", (e) => {
+        console.log("[PWA] beforeinstallprompt");
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.hidden = false;
+      });
+
       let deferredPrompt;
       const installBtn = document.getElementById("installBtn");
       window.addEventListener("beforeinstallprompt", (e) => {

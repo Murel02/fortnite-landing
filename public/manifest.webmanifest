@@ -3,7 +3,7 @@
   "name": "Fortnite Random Drop",
   "short_name": "Drop Picker",
   "description": "Pick fair, random drop spots for your squad.",
-  "start_url": "/?source=pwa",
+  "start_url": "/app?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
@@ -28,13 +28,13 @@
     {
       "name": "Random (current)",
       "short_name": "Random",
-      "url": "/?do=random&map=current",
+      "url": "/app?do=random&map=current",
       "icons": [{ "src": "/icons/maskable-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Switch to OG",
       "short_name": "OG Map",
-      "url": "/?map=og",
+      "url": "/app?map=og",
       "icons": [{ "src": "/icons/maskable-192.png", "sizes": "192x192" }]
     }
   ],

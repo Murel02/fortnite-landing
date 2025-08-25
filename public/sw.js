@@ -1,6 +1,7 @@
 const CACHE = "drop-picker-v2";
 const ASSETS = [
   "/",
+  "/app",
   "/css/style.css",
   "/images/fortnite-map.png",
   "/images/fortniteOG.png",

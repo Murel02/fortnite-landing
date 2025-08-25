@@ -64,105 +64,82 @@ body {
   padding-inline: clamp(12px, 4vw, 24px);
 }
 
-/* Hero */
-.hero {
-  text-align: center;
-  padding: clamp(20px, 4vh, 48px) 0 8px;
+/* --- Header --- */
+.hero--compact {
+  padding: 10px 0 0;
 }
-.hero h1 {
-  margin: 0;
-  font-size: clamp(1.6rem, 4.5vw, 3rem);
-  letter-spacing: 0.02em;
-  color: var(--primary);
-  text-transform: uppercase;
-}
-.subtitle {
-  margin: 0.4rem 0 0;
-  opacity: 0.85;
-  font-size: clamp(0.9rem, 2.6vw, 1.1rem);
-}
-
-/* Controls */
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 0 0;
-}
-.control-group {
+.hero__bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 8px 12px;
-  border-radius: 10px;
-  backdrop-filter: saturate(110%) blur(6px);
-}
-.control-group span {
-  font-size: 0.95rem;
-  opacity: 0.9;
-}
-
-/* Buttons */
-.btn {
-  appearance: none;
-  border: 0;
-  border-radius: 12px;
-  padding: 0.85rem 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.06s ease, box-shadow 0.2s ease, background 0.2s ease;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-}
-.btn:active {
-  transform: translateY(1px);
-}
-
-.btn-primary {
-  color: #fff;
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-}
-.btn-primary:hover {
-  filter: brightness(1.05);
-}
-
-/* Section heading */
-.section-heading {
-  text-align: center;
-  margin: 20px auto 10px;
-  font-size: clamp(1.05rem, 3.2vw, 1.4rem);
-  color: var(--accent);
+  justify-content: space-between;
   padding-inline: clamp(12px, 4vw, 24px);
 }
+.app-title {
+  margin: 0;
+  font-size: clamp(1.3rem, 5vw, 1.6rem);
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.icon-btn {
+  appearance: none;
+  border: 0;
+  background: var(--card-bg);
+  color: var(--text-light);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 1.3rem;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
 
+/* --- Map --- */
 .map-container {
   position: relative;
   width: 100%;
   background: radial-gradient(circle at center, #0b0226 10%, transparent 80%);
-  /* Remove the desktop cap on mobile, keep a larger cap on big screens */
   max-width: min(100vw, 1100px);
   margin-inline: auto;
-  border-radius: 16px;
-  padding: 6px;
+  border-radius: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
-
 #mapImg {
   display: block;
   width: 100%;
   height: auto;
 }
 
-/* Marker */
+/* Location pill over map */
+.location-pill {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-light);
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-weight: 600;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  backdrop-filter: blur(6px) saturate(110%);
+  z-index: 3;
+}
+.location-pill .pill-label {
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+/* --- Marker --- */
 .random-marker {
   position: absolute;
-  width: clamp(18px, 4.5vw, 24px);
-  height: clamp(18px, 4.5vw, 24px);
+  width: clamp(20px, 5vw, 28px);
+  height: clamp(20px, 5vw, 28px);
   border-radius: 50%;
   left: 50%;
   top: 50%;
@@ -176,7 +153,7 @@ body {
   animation: marker-bounce 0.5s ease;
 }
 
-/* Animations */
+/* Marker animations */
 @keyframes pulse {
   0% {
     transform: translate(-50%, -50%) scale(0.85);
@@ -203,159 +180,21 @@ body {
   }
 }
 
-/* History (if you use it elsewhere) */
-.history {
-  max-width: 800px;
-  margin: 10px auto 40px;
-  list-style: none;
-  padding: 0;
-}
-.history li {
-  padding: 0.75rem 1rem;
-  background: var(--card-bg);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: 0.5rem;
-}
-
-/* Mobile-first tweaks */
-@media (max-width: 640px) {
-  .controls {
-    justify-content: stretch;
-  }
-  .btn {
-    flex: 1;
-  }
-  .map-container {
-    max-width: 100vw; /* full width on phones */
-    border-radius: 0; /* edge-to-edge look */
-    border-left: none;
-    border-right: none;
-  }
-  .hero {
-    padding: 18px 0 6px;
-  }
-}
-
-.control-group select {
-  padding: 0.5rem;
-}
-
-/* Form controls */
-.control-group input[type="color"],
-.control-group select {
-  background: var(--card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--text-light);
-  font: inherit;
-  padding: 0.45rem 0.6rem;
-  cursor: pointer;
-  outline: none;
-}
-
-.control-group select option {
-  background: #1a0c3b;
-  color: var(--text-light);
-}
-
-/* make color input circular */
-.control-group input[type="color"] {
-  padding: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-}
-
-/***** Mobile FAB *****/
-.fab {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 50;
-  border: 0;
-  border-radius: 9999px;
-  padding: 0.95rem 1.2rem;
-  font-weight: 800;
-  font-size: 1.05rem;
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-}
-.fab:active {
-  transform: translateY(1px);
-}
-
-/* --- Header tweaks --- */
-.hero--compact {
-  padding: 10px 0 0;
-}
-.hero__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-inline: clamp(12px, 4vw, 24px);
-}
-.app-title {
-  margin: 0;
-  font-size: clamp(1.1rem, 4.5vw, 1.4rem);
-  color: var(--primary);
-}
-.icon-btn {
-  appearance: none;
-  border: 0;
-  background: var(--card-bg);
-  color: var(--text-light);
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-/* --- Location pill over map --- */
-.location-pill {
-  position: absolute;
-  left: 50%;
-  top: 10px;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--text-light);
-  padding: 8px 12px;
-  border-radius: 9999px;
-  font-weight: 600;
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  backdrop-filter: blur(6px) saturate(110%);
-  z-index: 3;
-}
-.location-pill .pill-label {
-  opacity: 0.8;
-  font-weight: 500;
-}
-/* --- Bottom primary bar --- */
+/* --- Big Drop Button --- */
 .bottom-bar {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: max(0px, env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.35));
+  bottom: 0;
   z-index: 40;
 }
-
 .primary-cta {
-  display: block;
-  width: 100%;
-  height: 64px; /* bigger height */
-  font-size: 1.4rem; /* larger font/emoji */
+  width: 100vw;
+  height: 72px; /* big for thumbs */
+  font-size: 1.6rem; /* large text/emoji */
   font-weight: 800;
   border: 0;
-  border-radius: 0; /* edge-to-edge */
+  border-radius: 0;
   color: #fff;
   background: linear-gradient(180deg, var(--primary), var(--primary-dark));
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35);
@@ -364,14 +203,12 @@ body {
   transform: translateY(1px);
 }
 
-/* --- Bottom sheet --- */
+/* --- Bottom sheet (for controls) --- */
 .sheet {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(
-    56px + max(0px, env(safe-area-inset-bottom))
-  ); /* sits above bottom bar */
+  bottom: 72px; /* sits above Drop button */
   z-index: 35;
   transition: transform 0.28s ease;
   transform: translateY(calc(100% - 72px)); /* collapsed height */
@@ -409,6 +246,7 @@ body {
   padding: 16px;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
+  padding-bottom: 20px;
 }
 
 .control-row {
@@ -426,8 +264,8 @@ body {
 }
 .control-row input[type="color"] {
   margin-top: 6px;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
 }
@@ -440,35 +278,10 @@ body {
   color: var(--text-light);
 }
 
-.row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.row--end {
-  justify-content: flex-end;
-}
-.control-group--grow {
-  flex: 1;
-}
-
-/* Make map truly full-bleed on phones */
-@media (max-width: 640px) {
-  .map-container {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    padding: 0;
-  }
-  #mapImg {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-}
+/* Tap-friendly inputs */
 .primary-cta,
 .icon-btn,
-.control-group select,
-.control-group input[type="color"] {
+.control-row select,
+.control-row input[type="color"] {
   touch-action: manipulation;
 }

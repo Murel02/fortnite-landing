@@ -219,7 +219,17 @@
 
       // ---- PWA registration + install prompt ----
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/sw.js");
+        navigator.serviceWorker.register("/sw.js").then(() => {
+          if (
+            !navigator.serviceWorker.controller &&
+            !sessionStorage.getItem("sw-reload")
+          ) {
+            navigator.serviceWorker.addEventListener("controllerchange", () => {
+              sessionStorage.setItem("sw-reload", "1");
+              window.location.reload();
+            });
+          }
+        });
       }
 
       let deferredPrompt;

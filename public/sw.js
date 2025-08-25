@@ -1,3 +1,4 @@
+// sw.js
 const CACHE = "drop-picker-v2";
 const ASSETS = [
   "/",
@@ -19,7 +20,7 @@ self.addEventListener("install", (e) => {
   );
 });
 
-// Activate: cleanup + enable navigation preload (faster on Android Chrome)
+// Activate: cleanup + navigation preload
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     (async () => {
@@ -27,30 +28,29 @@ self.addEventListener("activate", (e) => {
       await Promise.all(
         keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
       );
-      if (self.registration.navigationPreload) {
+      if (self.registration.navigationPreload)
         await self.registration.navigationPreload.enable();
-      }
       await self.clients.claim();
     })()
   );
 });
 
-// Fetch: network-first for HTML/API, cache-first for static
+// Fetch: network-first for navigations/API, cache-first for static
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // ignore socket transport
+  // Don't interfere with socket transports
   if (url.pathname.startsWith("/socket.io")) return;
 
-  // HTML navigations (shell)
+  // Navigations (HTML)
   if (e.request.mode === "navigate") {
     e.respondWith(
       (async () => {
         try {
-          const resp = (await e.preloadResponse) || (await fetch(e.request));
-          return resp;
+          return (await e.preloadResponse) || (await fetch(e.request));
         } catch {
           return (
+            (await caches.match("/app")) ||
             (await caches.match("/")) ||
             new Response("Offline", { status: 503 })
           );
@@ -60,13 +60,13 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // API: network first
+  // API: network-first
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/share")) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
 
-  // Static: cache first
+  // Static: cache-first
   e.respondWith(
     caches.match(e.request).then(
       (r) =>

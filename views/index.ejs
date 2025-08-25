@@ -217,7 +217,17 @@
         });
       }
 
-      // ---- PWA registration + install prompt ----
+      // ---- PWA registration + install prompt (robust order) ----
+      const installBtn = document.getElementById("installBtn");
+      let deferredPrompt = null;
+
+      // Hide the button if already installed / standalone
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      if (isStandalone) installBtn.hidden = true;
+
+      // Register SW and reload once when it takes control (first-load trap)
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").then(() => {
           if (
@@ -232,6 +242,7 @@
         });
       }
 
+      // Single listener (define AFTER installBtn & deferredPrompt)
       window.addEventListener("beforeinstallprompt", (e) => {
         console.log("[PWA] beforeinstallprompt");
         e.preventDefault();
@@ -239,20 +250,23 @@
         installBtn.hidden = false;
       });
 
-      let deferredPrompt;
-      const installBtn = document.getElementById("installBtn");
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installBtn.hidden = false;
-      });
       installBtn.addEventListener("click", async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log("[PWA] userChoice:", outcome);
         deferredPrompt = null;
         installBtn.hidden = true;
       });
+
+      // Debug helpers
+      window.addEventListener("appinstalled", () =>
+        console.log("[PWA] appinstalled")
+      );
+      console.log(
+        "[PWA] display-mode:",
+        isStandalone ? "standalone" : "browser"
+      );
     </script>
   </body>
 </html>

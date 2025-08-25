@@ -44,13 +44,6 @@
       Drop: <span id="locationText"><%= location.id %></span>
     </div>
 
-    <!-- Bottom bar: primary action -->
-    <div class="bottom-bar">
-      <button id="fabRandom" class="primary-cta" aria-label="Pick random">
-        🎲 Drop
-      </button>
-    </div>
-
     <!-- Bottom sheet: controls -->
     <section class="sheet" id="sheet">
       <!-- New labeled handle -->
@@ -88,6 +81,13 @@
         </button>
       </div>
     </section>
+
+    <!-- Bottom bar: primary action -->
+    <div class="bottom-bar">
+      <button id="fabRandom" class="primary-cta" aria-label="Pick random">
+        🎲 Drop
+      </button>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -187,8 +187,46 @@
         localStorage.setItem("markerColor", value);
       });
 
-      // --- Socket ---
-      const socket = io();
+      // Stronger reconnection settings (websocket-first)
+      const socket = io({
+        transports: ["websocket"],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 500,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+      });
+
+      function ensureConnected() {
+        if (socket.disconnected) socket.connect();
+      }
+
+      // Rejoin map after reconnect
+      socket.on("reconnect", () => {
+        const mapId = document.body.dataset.currentMap || "current";
+        socket.emit("joinMap", { mapId });
+      });
+
+      // Watchdog: reload if app was frozen for too long
+      let lastAlive = Date.now();
+      const STALE_MS = 90 * 1000;
+
+      socket.on("connect", () => (lastAlive = Date.now()));
+      socket.on("update", () => (lastAlive = Date.now()));
+
+      window.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          ensureConnected();
+          if (Date.now() - lastAlive > STALE_MS) location.reload();
+        }
+      });
+
+      window.addEventListener("pageshow", (e) => {
+        if (e.persisted) return location.reload();
+        ensureConnected();
+      });
+
+      window.addEventListener("online", ensureConnected);
 
       // --- Map init ---
       const savedMapId = localStorage.getItem("mapId");

@@ -10,7 +10,12 @@ const { getRandomLocation } = require("./models/locations");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  transports: ["websocket"],
+  pingInterval: 10000, // send a ping every 10s
+  pingTimeout: 25000, // consider dead if no pong in 25s
+});
+
 
 // --- View engine
 app.set("view engine", "ejs");

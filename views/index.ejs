@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css?v=4" />
   </head>
-  <body data-current-map="<%= currentMap || 'current' %>">
+  <body data-current-map="<%= currentMap || 'current' %>" data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>">
     <!-- Header -->
     <header class="hero container hero--compact">
       <div class="hero__bar">
@@ -24,7 +24,7 @@
       <div class="map-container">
         <img
           id="mapImg"
-          src="/images/fortnite-map.png"
+          src="<%= (typeof mapImage !== 'undefined' && mapImage) || '/images/fortnite-map.png' %>"
           alt="Fortnite Map"
           width="1300"
           height="1300"
@@ -43,6 +43,22 @@
     <div class="location-bar">
       Drop: <span id="locationText"><%= location.id %></span>
     </div>
+
+    <!-- Player Stats (via Fortnite API) -->
+    <section id="statsSection" class="container stats-section">
+      <form id="statsForm" class="stats-form">
+        <strong class="stats-title">Player Stats</strong>
+        <input id="statsName" class="stats-input" name="name" type="text" placeholder="Epic username" autocomplete="off" />
+        <select id="statsPlatform" class="stats-select" name="platform">
+          <option value="epic">Epic</option>
+          <option value="psn">PSN</option>
+          <option value="xbl">Xbox</option>
+        </select>
+        <button type="submit" class="btn btn-secondary stats-btn">Lookup</button>
+        <span id="statsStatus" class="stats-status"></span>
+      </form>
+      <div id="statsResult" class="stats-grid"></div>
+    </section>
 
     <!-- Bottom sheet: controls -->
     <section class="sheet" id="sheet">
@@ -67,13 +83,10 @@
             <input type="color" id="markerColorPicker" value="#ff0000" />
           </label>
 
-          <label>
-            Map
-            <select id="mapSelect">
-              <option value="current">Chapter 6 • Season 4</option>
-              <option value="og">OG Map</option>
-            </select>
-          </label>
+          <div>
+            <label>Map</label>
+            <div style="opacity:.8">Current (from API)</div>
+          </div>
         </div>
 
         <button id="installBtn" class="btn btn-secondary" hidden>
@@ -149,16 +162,15 @@
       // --- Maps available ---
       const MAPS = {
         current: {
-          src: "/images/fortnite-map.png",
-          label: "Chapter 6 • Season 4",
+          src: document.body.dataset.mapImage || "/images/fortnite-map.png",
+          label: "Current (API)",
         },
-        og: { src: "/images/fortniteOG.png", label: "OG Map" },
       };
 
       // --- DOM refs ---
       const marker = document.getElementById("marker");
       const mapImg = document.getElementById("mapImg");
-      const mapSelect = document.getElementById("mapSelect");
+      const mapSelect = { value: "current" };
 
       function positionMarker(x, y) {
         marker.style.left = x * 100 + "%";
@@ -249,12 +261,12 @@
         mapImg.alt = m.label;
         document.body.dataset.current_map = mapId;
         document.body.dataset.currentMap = mapId;
-        mapSelect.value = mapId;
+        // No select; single dynamic map
         localStorage.setItem("mapId", mapId);
         socket.emit("joinMap", { mapId });
       }
       applyMap(startMapId);
-      mapSelect.addEventListener("change", (e) => applyMap(e.target.value));
+      // no-op: single map
 
       // Drop action
       const fab = document.getElementById("fabRandom");
@@ -268,6 +280,7 @@
       socket.on("update", (loc) => {
         if (loc.mapId && loc.mapId !== document.body.dataset.currentMap)
           applyMap(loc.mapId);
+        if (loc.mapImage) mapImg.src = loc.mapImage;
         document.getElementById("locationText").textContent = loc.id;
         positionMarker(loc.x, loc.y);
         marker.classList.add("bounce-once");
@@ -315,6 +328,47 @@
       window.addEventListener("appinstalled", () =>
         console.log("[PWA] appinstalled")
       );
+
+      // --- Stats lookup ---
+      (function initStats() {
+        const form = document.getElementById("statsForm");
+        if (!form) return;
+        const nameEl = document.getElementById("statsName");
+        const platEl = document.getElementById("statsPlatform");
+        const statusEl = document.getElementById("statsStatus");
+        const outEl = document.getElementById("statsResult");
+
+        function render(data) {
+          const s = data.all || {};
+          outEl.innerHTML = `
+            <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${s.matches ?? "-"}</span></div>
+            <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${s.wins ?? "-"}</span></div>
+            <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${s.winRate ?? "-"}</span></div>
+            <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${s.kills ?? "-"}</span></div>
+            <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${s.kd ?? "-"}</span></div>
+            <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${s.top10 ?? "-"}</span></div>
+            <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${s.score ?? "-"}</span></div>
+          `;
+        }
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const name = nameEl.value.trim();
+          const platform = platEl.value;
+          if (!name) return;
+          statusEl.textContent = "Loading…";
+          outEl.innerHTML = "";
+          try {
+            const res = await fetch(`/api/stats?name=${encodeURIComponent(name)}&platform=${encodeURIComponent(platform)}`, { cache: "no-store" });
+            if (!res.ok) throw new Error("Request failed");
+            const data = await res.json();
+            render(data);
+            statusEl.textContent = `${data.name} • ${data.platform.toUpperCase()}`;
+          } catch (err) {
+            statusEl.textContent = "Not found or error";
+          }
+        });
+      })();
     </script>
   </body>
 </html>

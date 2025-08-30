@@ -45,7 +45,7 @@ const locationsByMap = {
     { id: "Fatal Fields", x: 0.6, y: 0.79 },
     { id: "Retail Row", x: 0.75, y: 0.55 },
     { id: "Paradise Palms", x: 0.81, y: 0.76 },
-    { id: "Racetack", x: 0.89, y: 0.62 },
+    { id: "Racetrack", x: 0.89, y: 0.62 },
     { id: "Salty Springs", x: 0.57, y: 0.64 },
   ],
 };

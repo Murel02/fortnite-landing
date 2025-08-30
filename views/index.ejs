@@ -8,7 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css?v=4" />
   </head>
-  <body data-current-map="<%= currentMap || 'current' %>" data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>">
+  <body
+    data-current-map="<%= currentMap || 'current' %>"
+    data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
+  >
     <!-- Header -->
     <header class="hero container hero--compact">
       <div class="hero__bar">
@@ -24,17 +27,14 @@
       <div class="map-container">
         <img
           id="mapImg"
-          src="<%= (typeof mapImage !== 'undefined' && mapImage) || '/images/fortnite-map.png' %>"
+          src="<%= mapImage || '/images/fortnite-map.png' %>"
           alt="Fortnite Map"
-          width="1300"
-          height="1300"
         />
         <div
           class="random-marker"
           id="marker"
           data-x="<%= location.x %>"
           data-y="<%= location.y %>"
-          aria-label="Selected drop location"
         ></div>
       </div>
     </main>
@@ -48,13 +48,22 @@
     <section id="statsSection" class="container stats-section">
       <form id="statsForm" class="stats-form">
         <strong class="stats-title">Player Stats</strong>
-        <input id="statsName" class="stats-input" name="name" type="text" placeholder="Epic username" autocomplete="off" />
+        <input
+          id="statsName"
+          class="stats-input"
+          name="name"
+          type="text"
+          placeholder="Epic username"
+          autocomplete="off"
+        />
         <select id="statsPlatform" class="stats-select" name="platform">
           <option value="epic">Epic</option>
           <option value="psn">PSN</option>
           <option value="xbl">Xbox</option>
         </select>
-        <button type="submit" class="btn btn-secondary stats-btn">Lookup</button>
+        <button type="submit" class="btn btn-secondary stats-btn">
+          Lookup
+        </button>
         <span id="statsStatus" class="stats-status"></span>
       </form>
       <div id="statsResult" class="stats-grid"></div>
@@ -85,7 +94,7 @@
 
           <div>
             <label>Map</label>
-            <div style="opacity:.8">Current (from API)</div>
+            <div style="opacity: 0.8">Current (from API)</div>
           </div>
         </div>
 
@@ -259,7 +268,6 @@
         const m = MAPS[mapId] || MAPS.current;
         mapImg.src = m.src;
         mapImg.alt = m.label;
-        document.body.dataset.current_map = mapId;
         document.body.dataset.currentMap = mapId;
         // No select; single dynamic map
         localStorage.setItem("mapId", mapId);
@@ -341,13 +349,27 @@
         function render(data) {
           const s = data.all || {};
           outEl.innerHTML = `
-            <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${s.matches ?? "-"}</span></div>
-            <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${s.wins ?? "-"}</span></div>
-            <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${s.winRate ?? "-"}</span></div>
-            <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${s.kills ?? "-"}</span></div>
-            <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${s.kd ?? "-"}</span></div>
-            <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${s.top10 ?? "-"}</span></div>
-            <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${s.score ?? "-"}</span></div>
+            <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
+              s.matches ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
+              s.wins ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
+              s.winRate ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
+              s.kills ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
+              s.kd ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
+              s.top10 ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
+              s.score ?? "-"
+            }</span></div>
           `;
         }
 
@@ -359,11 +381,18 @@
           statusEl.textContent = "Loading…";
           outEl.innerHTML = "";
           try {
-            const res = await fetch(`/api/stats?name=${encodeURIComponent(name)}&platform=${encodeURIComponent(platform)}`, { cache: "no-store" });
+            const res = await fetch(
+              `/api/stats?name=${encodeURIComponent(
+                name
+              )}&platform=${encodeURIComponent(platform)}`,
+              { cache: "no-store" }
+            );
             if (!res.ok) throw new Error("Request failed");
             const data = await res.json();
             render(data);
-            statusEl.textContent = `${data.name} • ${data.platform.toUpperCase()}`;
+            statusEl.textContent = `${
+              data.name
+            } • ${data.platform.toUpperCase()}`;
           } catch (err) {
             statusEl.textContent = "Not found or error";
           }

@@ -34,5 +34,10 @@ module.exports = function owner(req, res, next) {
 
   res.locals.__owner = isOwner;
   req.isOwner = isOwner;
+  console.log(
+    "DEV_OWNER_SECRET len:",
+    (process.env.DEV_OWNER_SECRET || "").length
+  );
+
   next();
 };

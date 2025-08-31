@@ -64,7 +64,7 @@ app.use(devRoutes);
 
 // PROTECTED (kræver Basic Auth — men owner bypasser nu)
 app.use("/api", apiRoutes);
-app.use("/", basicAuth, indexRoutes);
+app.use("/", indexRoutes);
 
 // Health
 app.get("/healthz", (_req, res) => res.json({ status: "ok" }));

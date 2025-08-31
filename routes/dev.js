@@ -135,12 +135,15 @@ router.post("/dev/toggle", (req, res) => {
 });
 
 router.post("/owner/activate", (req, res) => {
-  // selve cookie-sætningen sker i owner-middleware (den kører før routes)
-  // vi returnerer blot status, så client kan reloade
-  if (!res.locals.__owner) {
-    return res.status(401).json({ ok: false, message: "Owner secret invalid" });
+  const secret = process.env.DEV_OWNER_SECRET || "";
+  const fromBody = req.body && req.body.owner;
+
+  // middleware har sat req.isOwner hvis secret var korrekt,
+  // men vi accepterer også korrekt secret her som backup
+  if (req.isOwner || (secret && fromBody === secret)) {
+    return res.json({ ok: true });
   }
-  return res.json({ ok: true });
+  return res.status(401).json({ ok: false, message: "Owner secret invalid" });
 });
 
 module.exports = router;

@@ -56,10 +56,16 @@ function isIcon(url) {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Skip socket.io
+  // Skip alt der IKKE er GET (fx POST /owner/activate)
+  if (e.request.method !== "GET") {
+    // lad browseren håndtere den normalt (eller brug network-first hvis du vil)
+    return;
+  }
+
+  // Don't interfere with socket transports
   if (url.pathname.startsWith("/socket.io")) return;
 
-  // HTML navigations → network-first m. preload, fallback til /app
+  // HTML navigations
   if (e.request.mode === "navigate") {
     e.respondWith(
       (async () => {
@@ -77,7 +83,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // CSS → network-first (så design opdaterer hurtigt)
+  // CSS → network-first
   if (url.pathname.startsWith("/css/")) {
     e.respondWith(
       fetch(e.request)
@@ -91,14 +97,22 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // API → network-first (ingen cache-forurening)
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/share")) {
+  // API og formular-endpoints → network-first (GETs)
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/share") ||
+    url.pathname.startsWith("/owner/") ||
+    url.pathname.startsWith("/dev/")
+  ) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
 
-  // Images & icons → stale-while-revalidate (ignoreSearch håndterer querystrings/versioner)
-  if (isImageRequest(url) || isIcon(url)) {
+  // Images & icons → stale-while-revalidate
+  if (
+    /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(url.pathname) ||
+    url.pathname.startsWith("/icons/")
+  ) {
     e.respondWith(
       (async () => {
         const cache = await caches.open(CACHE);
@@ -117,7 +131,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Øvrige statics → cache-first, derefter læg i cache
+  // Øvrige statics → cache-first
   e.respondWith(
     caches.match(e.request).then(
       (r) =>

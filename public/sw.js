@@ -1,5 +1,5 @@
 // /public/sw.js
-const CACHE = "drop-picker-v6"; // bump ved ændringer
+const CACHE = "drop-picker-v7"; // bump ved ændringer
 const ASSETS = [
   "/", // shell
   "/app?source=pwa", // app-UI som offline fallback

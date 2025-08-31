@@ -1,17 +1,23 @@
 // middleware/basicAuth.js
 module.exports = function basicAuth(req, res, next) {
+  // Ejer (owner-cookie) må passere uden login
+  if (req.isOwner) return next();
+
   const header = req.headers.authorization || "";
-  const [, base64] = header.split(" ");
-  if (!base64) {
-    res.set("WWW-Authenticate", 'Basic realm="Restricted"');
+  const [type, token] = header.split(" ");
+  if (type?.toLowerCase() !== "basic" || !token) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="Restricted"');
     return res.status(401).send("Auth required");
   }
-  try {
-    const [user, pass] = Buffer.from(base64, "base64").toString().split(":");
-    const U = process.env.BASIC_USER || "fortnite";
-    const P = process.env.BASIC_PASS || "Medina";
-    if (user === U && pass === P) return next();
-  } catch (_) {}
-  res.set("WWW-Authenticate", 'Basic realm="Restricted"');
-  return res.status(401).send("Auth failed");
+
+  const decoded = Buffer.from(token, "base64").toString("utf8");
+  const [user, pass] = decoded.split(":");
+
+  const EXP_USER = process.env.BASIC_AUTH_USER || "fortnite";
+  const EXP_PASS = process.env.BASIC_AUTH_PASS || "Medina";
+
+  if (user === EXP_USER && pass === EXP_PASS) return next();
+
+  res.setHeader("WWW-Authenticate", 'Basic realm="Restricted"');
+  return res.status(401).send("Auth required");
 };

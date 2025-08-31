@@ -6,24 +6,23 @@ const socketIo = require("socket.io");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 
-const devGuard = require("./middleware/devGuard");
 const owner = require("./middleware/owner");
+const devGuard = require("./middleware/devGuard");
 
 const app = express();
 
-// --- View engine
+// View engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Core middleware (ORDER MATTERS)
+// --- ORDER MATTERS ---
 app.use(cookieParser());
-// Body parsing MUST come before owner/devGuard so they can read req.body
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); // harmless to have both; useful for JSON posts
+app.use(express.json());
 app.use(owner);
 app.use(devGuard);
 
-// --- Static (PUBLIC) with SW no-cache
+// Static
 app.use(
   express.static(path.join(__dirname, "public"), {
     maxAge: "7d",
@@ -33,10 +32,8 @@ app.use(
   })
 );
 
-// --- Create HTTP server BEFORE Socket.IO
+// HTTP + IO
 const server = http.createServer(app);
-
-// --- Socket.IO
 const io = socketIo(server, {
   transports: ["websocket"],
   pingInterval: 10000,
@@ -44,28 +41,36 @@ const io = socketIo(server, {
 });
 require("./sockets/mapSocket")(io);
 
-// --- Routes
+// Routes
 const basicAuth = require("./middleware/basicAuth");
 const indexRoutes = require("./routes/indexRoutes");
 const mapRoutes = require("./routes/mapRoutes");
 const apiRoutes = require("./routes/apiRoutes");
 const devRoutes = require("./routes/dev");
 
-// Public routes (no auth: allow PWA install and direct /app access)
+// Public routes (ingen auth)
 app.use("/", mapRoutes);
 
-// Dev routes (owner/dev toggles & dev APIs)
+// Offentlig alias: /app → /
+app.get("/app", (_req, res) => res.redirect("/"));
+
+// Offentlig unlock-side (hvis du har routes/unlock.js)
+try {
+  app.use("/", require("./routes/unlock"));
+} catch {}
+
+// Dev/endpoints (owner/dev toggles + dev API'er)
 app.use(devRoutes);
 
-// Protected routes (require Basic Auth)
-app.use("/api", apiRoutes); // hvis du vil beskytte /api, sæt basicAuth her
+// PROTECTED (kræver Basic Auth — men owner bypasser nu)
+app.use("/api", apiRoutes);
 app.use("/", basicAuth, indexRoutes);
 
-// Health & noise
+// Health
 app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
 app.get("/favicon.ico", (_req, res) => res.status(204).end());
 
-// --- Start
+// Start
 const port = process.env.PORT || 3003;
 server.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);

@@ -5,12 +5,18 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const path = require("path");
+const devGuard = require("./middleware/devGuard");
+const devRoutes = require("./routes/dev");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
 // --- View engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+app.use(cookieParser());
+app.use(devGuard);
 
 // --- Static (PUBLIC) with SW no-cache
 app.use(
@@ -46,6 +52,12 @@ const apiRoutes = require("./routes/apiRoutes");
 
 // Public routes (no auth: allow PWA install and direct /app access)
 app.use("/", mapRoutes);
+
+app.use(devRoutes);
+app.get("/__dev", (req, res) =>
+  res.json({ dev: !!res.locals.__dev, cookie: req.cookies.dev })
+);
+
 
 // Protected routes (require Basic Auth)
 app.use("/api", basicAuth, apiRoutes);

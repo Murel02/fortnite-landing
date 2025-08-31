@@ -1,0 +1,49 @@
+<% if (typeof __dev !== "undefined" && __dev) { %>
+<div class="devpanel">
+  <div class="devpanel__row">
+    <strong>Dev Mode</strong>
+    <button id="devToggleMarkers" class="btn btn-xs">Vis/skjul markører</button>
+    <button id="devExport" class="btn btn-xs">Export JSON</button>
+    <button id="devShowAll" class="btn btn-xs">Vis alle POIs</button>
+
+    <label class="btn btn-xs file">
+      Import JSON
+      <input type="file" id="devImportFile" accept="application/json" hidden />
+    </label>
+  </div>
+
+  <!-- NY: QoL-række -->
+  <div class="devpanel__row">
+    <label style="display: flex; align-items: center; gap: 0.4rem">
+      <input type="checkbox" id="devSnap" checked />
+      Snap (1% grid)
+    </label>
+    <button id="devBulkPaste" class="btn btn-xs">Bulk paste (x y name)</button>
+    <button id="devCopyJS" class="btn btn-xs">Copy as JS</button>
+  </div>
+
+  <div class="devpanel__row">
+    <label
+      >Navn:
+      <input id="devName" placeholder="Ny lokation..." />
+    </label>
+    <span class="muted"
+      >Klik på kortet for at tilføje (x,y sættes automatisk)</span
+    >
+  </div>
+
+  <div class="devpanel__list">
+    <table>
+      <thead>
+        <tr>
+          <th>Navn</th>
+          <th>X</th>
+          <th>Y</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="devList"></tbody>
+    </table>
+  </div>
+</div>
+<% } %>

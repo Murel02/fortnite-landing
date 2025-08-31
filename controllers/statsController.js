@@ -1,17 +1,14 @@
 // controllers/statsController.js
 const { doFetch } = require("../utils/doFetch");
 
-// accept ALLOW_STATS_MOCK or ALLOW_STAT_MOCK (typo-friendly)
+// allow ALLOW_STATS_MOCK or ALLOW_STAT_MOCK
 const RAW_ALLOW =
   process.env.ALLOW_STATS_MOCK ?? process.env.ALLOW_STAT_MOCK ?? "true";
 const ALLOW_STATS_MOCK = String(RAW_ALLOW).toLowerCase() === "true";
-
-// fortniteapi.io base url
 const FIO_BASE = (
   process.env.FORTNITEAPI_IO_BASE || "https://fortniteapi.io"
 ).replace(/\/+$/, "");
 
-/** safe numeric parse */
 function num(v) {
   if (v == null) return 0;
   if (typeof v === "number") return v;
@@ -20,37 +17,81 @@ function num(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** map fortniteapi.io payload to our simple 'all' object */
-function parseFioStats(data) {
-  const gs = data?.global_stats || data?.global || data?.stats || {};
-  const all =
-    gs.all ||
-    gs.overall ||
-    gs.keyboardmouse ||
-    gs.gamepad ||
-    gs.touch ||
-    gs.any ||
-    gs;
+// Sum helper
+function add(a, b) {
+  return num(a) + num(b);
+}
 
-  const pick = (obj, keys) => {
-    for (const k of keys) if (obj && obj[k] != null) return obj[k];
-    return undefined;
+// Build an aggregate across modes if “all/overall” is missing
+function aggregateGlobalStats(gs = {}) {
+  // known buckets that often exist
+  const buckets = [
+    "all",
+    "overall",
+    "keyboardmouse",
+    "gamepad",
+    "touch", // sometimes present
+    "solo",
+    "duo",
+    "squad",
+    "ltm",
+    "trio",
+    "pairs",
+    "rumble",
+  ];
+
+  // Prefer a single “all/overall/*input*” if present
+  for (const key of [
+    "all",
+    "overall",
+    "keyboardmouse",
+    "gamepad",
+    "touch",
+    "any",
+  ]) {
+    if (gs[key]) return { ...gs[key] };
+  }
+
+  // Else, aggregate whatever buckets exist
+  const acc = {
+    matchesplayed: 0,
+    placetop1: 0,
+    kills: 0,
+    placetop10: 0,
+    score: 0,
   };
 
-  const matches = num(
-    pick(all, ["matchesplayed", "matches_played", "matches"])
-  );
-  const wins = num(pick(all, ["placetop1", "wins"]));
-  const kills = num(pick(all, ["kills"]));
+  for (const key of Object.keys(gs)) {
+    if (!buckets.includes(key) && typeof gs[key] !== "object") continue;
+    const m = gs[key] || {};
+    acc.matchesplayed = add(
+      acc.matchesplayed,
+      m.matchesplayed ?? m.matches_played ?? m.matches
+    );
+    acc.placetop1 = add(acc.placetop1, m.placetop1 ?? m.wins);
+    acc.kills = add(acc.kills, m.kills);
+    acc.placetop10 = add(acc.placetop10, m.placetop10 ?? m.top10);
+    acc.score = add(acc.score, m.score);
+  }
 
-  let kd = num(pick(all, ["kd", "k/d", "kdr", "killdeath"]));
+  return acc;
+}
+
+function parseFioStats(payload) {
+  const gs = payload?.global_stats || payload?.global || payload?.stats || {};
+  const all = aggregateGlobalStats(gs);
+
+  const matches = num(all.matchesplayed ?? all.matches_played ?? all.matches);
+  const wins = num(all.placetop1 ?? all.wins);
+  const kills = num(all.kills);
+  const top10 = num(all.placetop10 ?? all.top10);
+  const score = num(all.score);
+
+  let kd = num(all.kd ?? all["k/d"] ?? all.kdr ?? all.killdeath);
   if (!kd && matches > wins) kd = kills / Math.max(1, matches - wins);
 
-  let winRate = num(pick(all, ["winrate", "win_rate", "win%"]));
+  let winRate = num(all.winrate ?? all.win_rate ?? all["win%"]);
   if (!winRate && matches) winRate = (wins * 100) / matches;
-
-  const top10 = num(pick(all, ["placetop10", "top10"]));
-  const score = num(pick(all, ["score"]));
 
   return {
     matches,
@@ -63,7 +104,7 @@ function parseFioStats(data) {
   };
 }
 
-/** deterministic mock (only if ALLOW_STATS_MOCK=true) */
+// deterministic mock (unchanged)
 function makeMockStats(name) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < name.length; i++) {
@@ -107,7 +148,6 @@ exports.getStats = async (req, res) => {
     const platform = String(req.query.platform || "epic").toLowerCase();
     if (!name) return res.status(400).json({ error: "Missing name" });
 
-    // get key (accept two env names)
     const fioKey =
       process.env.FORTNITEAPI_IO_KEY || process.env.FORTNITE_IO_KEY;
     if (!fioKey) {
@@ -123,7 +163,7 @@ exports.getStats = async (req, res) => {
         .json({ error: "No FORTNITEAPI_IO_KEY configured" });
     }
 
-    // (1) username -> account id
+    // 1) lookup account id
     const qp = new URLSearchParams({ username: name });
     if (platform === "xbl" || platform === "xbox") qp.set("platform", "xbl");
     else if (
@@ -132,13 +172,15 @@ exports.getStats = async (req, res) => {
       platform === "playstation"
     )
       qp.set("platform", "psn");
-
     const lookupUrl = `${FIO_BASE}/v1/lookup?${qp.toString()}`;
+
     let lookupResp;
     try {
-      lookupResp = await doFetch(lookupUrl, {
-        headers: { Authorization: fioKey, Accept: "application/json" },
-      });
+      lookupResp = await doFetch(
+        lookupUrl,
+        { headers: { Authorization: fioKey, Accept: "application/json" } },
+        5000
+      );
     } catch (e) {
       if (ALLOW_STATS_MOCK)
         return res.json({
@@ -147,13 +189,11 @@ exports.getStats = async (req, res) => {
           all: makeMockStats(name),
           note: `mocked (lookup network error: ${e.code || e.message})`,
         });
-      return res
-        .status(502)
-        .json({
-          error: "Network error contacting fortniteapi.io (lookup)",
-          code: e.code || null,
-          message: e.message || String(e),
-        });
+      return res.status(502).json({
+        error: "Network error contacting fortniteapi.io (lookup)",
+        code: e.code || null,
+        message: e.message || String(e),
+      });
     }
     if (!lookupResp.ok) {
       const msg = await lookupResp.text().catch(() => "");
@@ -188,15 +228,17 @@ exports.getStats = async (req, res) => {
       return res.status(404).json({ error: "Account not found" });
     }
 
-    // (2) account id -> global stats
+    // 2) stats by account id
     const statsUrl = `${FIO_BASE}/v1/stats?account=${encodeURIComponent(
       accountId
     )}`;
     let statsResp;
     try {
-      statsResp = await doFetch(statsUrl, {
-        headers: { Authorization: fioKey, Accept: "application/json" },
-      });
+      statsResp = await doFetch(
+        statsUrl,
+        { headers: { Authorization: fioKey, Accept: "application/json" } },
+        6000
+      );
     } catch (e) {
       if (ALLOW_STATS_MOCK)
         return res.json({
@@ -205,16 +247,40 @@ exports.getStats = async (req, res) => {
           all: makeMockStats(name),
           note: `mocked (stats network error: ${e.code || e.message})`,
         });
-      return res
-        .status(502)
-        .json({
-          error: "Network error contacting fortniteapi.io (stats)",
-          code: e.code || null,
-          message: e.message || String(e),
-        });
+      return res.status(502).json({
+        error: "Network error contacting fortniteapi.io (stats)",
+        code: e.code || null,
+        message: e.message || String(e),
+      });
     }
+
+    const payload = await statsResp.json();
+
+    // PRIVATE account: Fortnite privacy setting
+    const isPrivate =
+      payload?.code === "PRIVATE_ACCOUNT" ||
+      payload?.error?.code === "PRIVATE_ACCOUNT" ||
+      (payload?.result === false && /private/i.test(payload?.message || ""));
+    if (isPrivate) {
+      if (ALLOW_STATS_MOCK) {
+        return res.json({
+          name: resolvedName,
+          platform,
+          all: makeMockStats(name),
+          note: "mocked (private account)",
+          raw: { accountId },
+        });
+      }
+      return res.status(403).json({
+        error: "Private account",
+        message: payload?.message || "This account is private",
+        raw: { accountId },
+      });
+    }
+
     if (!statsResp.ok) {
-      const msg = await statsResp.text().catch(() => "");
+      const msg =
+        typeof payload === "string" ? payload : JSON.stringify(payload);
       if (ALLOW_STATS_MOCK)
         return res.json({
           name: resolvedName,
@@ -227,9 +293,8 @@ exports.getStats = async (req, res) => {
         .status(statsResp.status)
         .json({ error: "Stats fetch failed", details: msg.slice(0, 500) });
     }
-    const payload = await statsResp.json();
-    const all = parseFioStats(payload);
 
+    const all = parseFioStats(payload);
     return res.json({ name: resolvedName, platform, all, raw: { accountId } });
   } catch (err) {
     console.error("getStats error:", err);

@@ -1,80 +1,61 @@
 // sockets/mapSocket.js
-const mapModel = require("../models/fortniteMap");
-const locationsModel = require("../models/locations");
-
-const SAFE_IMAGE = "/images/fortnite-map.png"; // same as DEFAULT_LOCAL_IMAGE
+// IMPORTANT: don't destructure from the model to avoid circular require issues.
+const fortniteMap = require("../models/fortniteMap");
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    let currentRoom = "current";
-    socket.join(currentRoom);
+    const log = (...args) => console.log("[socket]", socket.id, ...args);
 
-    const safeImage = () => mapModel.fortniteMapCache.imageUrl || SAFE_IMAGE;
-
-    // Send initial location
-    (async () => {
+    async function sendUpdate(where = "init", force = false) {
       try {
-        if (currentRoom === "current") await mapModel.refreshFortniteMap();
+        if (typeof fortniteMap.refreshFortniteMap === "function") {
+          await fortniteMap.refreshFortniteMap(force);
+        }
+
+        const getLoc =
+          typeof fortniteMap.getRandomDynamicLocation === "function"
+            ? fortniteMap.getRandomDynamicLocation
+            : () => ({ id: "Center", name: "Center", x: 0.5, y: 0.5 });
+
+        const loc = getLoc();
+        const imageUrl =
+          (fortniteMap.fortniteMapCache &&
+            fortniteMap.fortniteMapCache.imageUrl) ||
+          "";
+
+        const payload = {
+          ...loc,
+          mapId: "current",
+          mapImage: imageUrl,
+        };
+
+        socket.emit("update", payload);
+        log("update → client", where, payload.id, payload.x, payload.y);
+        return payload;
       } catch (e) {
-        // refreshFortniteMap never throws now, but keep defensive
-        console.error("initial refresh error:", e?.message || e);
+        log("sendUpdate error", e?.message || e);
+        return null;
       }
-      const loc =
-        currentRoom === "current"
-          ? mapModel.getRandomDynamicLocation()
-          : locationsModel.getRandomLocation(currentRoom);
+    }
 
-      socket.emit("update", {
-        ...loc,
-        mapId: currentRoom,
-        mapImage: currentRoom === "current" ? safeImage() : undefined,
-      });
-    })();
+    // First payload
+    sendUpdate("connect");
 
-    socket.on("joinMap", async ({ mapId = "current" } = {}) => {
-      socket.leave(currentRoom);
-      currentRoom = mapModel.MAP_IDS.includes(mapId) ? mapId : "current";
-      socket.join(currentRoom);
-
-      try {
-        if (currentRoom === "current") await mapModel.refreshFortniteMap();
-      } catch (e) {
-        console.error("joinMap refresh error:", e?.message || e);
-      }
-
-      const loc =
-        currentRoom === "current"
-          ? mapModel.getRandomDynamicLocation()
-          : locationsModel.getRandomLocation(currentRoom);
-
-      socket.emit("update", {
-        ...loc,
-        mapId: currentRoom,
-        mapImage: currentRoom === "current" ? safeImage() : undefined,
-      });
+    // Join (kept for future multi-map support)
+    socket.on("joinMap", async (_data = {}, ack) => {
+      const payload = await sendUpdate("joinMap");
+      if (typeof ack === "function") ack({ ok: !!payload, payload });
     });
 
-    socket.on("newRandom", async ({ mapId } = {}) => {
-      const room = mapModel.MAP_IDS.includes(mapId) ? mapId : currentRoom;
+    // New random drop
+    socket.on("newRandom", async (_data = {}, ack) => {
+      const payload = await sendUpdate("newRandom");
+      if (typeof ack === "function") ack({ ok: !!payload, payload });
+    });
 
-      try {
-        if (room === "current") await mapModel.refreshFortniteMap();
-      } catch (e) {
-        console.error("newRandom refresh error:", e?.message || e);
-      }
-
-      const location =
-        room === "current"
-          ? mapModel.getRandomDynamicLocation()
-          : locationsModel.getRandomLocation(room);
-
-      mapModel.stateByMap[room].location = location;
-
-      io.to(room).emit("update", {
-        ...location,
-        mapId: room,
-        mapImage: room === "current" ? safeImage() : undefined,
-      });
+    // Optional health ping
+    socket.on("ping:alive", (ack) => {
+      if (typeof ack === "function") ack({ ok: true, ts: Date.now() });
     });
   });
 };

@@ -1,0 +1,148 @@
+.devpanel {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+}
+.devpanel__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.devpanel input[type="text"],
+.devpanel input[type="number"],
+.devpanel input {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+.devpanel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.devpanel th,
+.devpanel td {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.35rem;
+}
+.devpanel .btn.btn-xs {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.devpanel .muted {
+  opacity: 0.75;
+}
+
+.devMarkerLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+.devMarker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #ff2a2a;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  cursor: grab;
+}
+.devMarker:active {
+  cursor: grabbing;
+}
+
+/* API markører (kun visning – klik/drag promoverer dem til dev) */
+.devMarker.devMarker--api {
+  background: #2a7bff;
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+  opacity: 0.9;
+}
+.devMarker.devMarker--api::after {
+  content: "A";
+  position: absolute;
+  inset: -2px 0 0 0;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 14px;
+  color: #fff;
+  pointer-events: none;
+}
+
+/* Label ved markør */
+.devMarker {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--marker-color, #ff3b30);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.devMarker.devMarker--api {
+  background: #2a7bff;
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.devLabel {
+  position: absolute;
+  transform: translate(-50%, -14px);
+  left: 50%;
+  top: -10px;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1.3;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  pointer-events: auto; /* vigtig: så vi kan klikke/edite */
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.devLabel--api {
+  background: rgba(42, 123, 255, 0.85);
+}
+
+.devLabel.editing {
+  outline: 1px dashed rgba(255, 255, 255, 0.7);
+}
+
+/* Marker-layer container */
+.devMarkerLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none; /* lader klik gå igennem */
+}
+
+/* men labels/markører må gerne tage events */
+.devMarker,
+.devLabel {
+  pointer-events: auto;
+}

@@ -7,6 +7,9 @@
     <title>Fortnite Random Drop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/css/style.css?v=4" />
+    <% if (typeof __dev !== "undefined" && __dev) { %>
+    <link rel="stylesheet" href="/css/devmode.css" />
+    <% } %>
   </head>
   <body
     data-current-map="<%= currentMap || 'current' %>"
@@ -22,12 +25,14 @@
       </div>
     </header>
 
+    <%- include("partials/devpanel") %>
+
     <!-- Map -->
     <main class="map-bleed">
       <div class="map-container">
         <img
           id="mapImg"
-          src="<%= mapImage || '/images/fortnite-map.png' %>"
+          src="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
           alt="Fortnite Map"
         />
         <div
@@ -41,7 +46,7 @@
 
     <!-- Location text bar -->
     <div class="location-bar">
-      Drop: <span id="locationText"><%= location.id %></span>
+      Drop: <span id="locationText"><%= (location.name || location.id) %></span>
     </div>
 
     <!-- Player Stats (via Fortnite API) -->
@@ -56,11 +61,6 @@
           placeholder="Epic username"
           autocomplete="off"
         />
-        <select id="statsPlatform" class="stats-select" name="platform">
-          <option value="epic">Epic</option>
-          <option value="psn">PSN</option>
-          <option value="xbl">Xbox</option>
-        </select>
         <button type="submit" class="btn btn-secondary stats-btn">
           Lookup
         </button>
@@ -128,7 +128,7 @@
       function setThemeIcon() {
         const isLight =
           document.documentElement.getAttribute("data-theme") === "light";
-        themeBtn.textContent = isLight ? "🌞" : "🌙";
+        themeBtn.textContent = isLight ? "🌙" : "🌞";
       }
       function applyThemeMeta() {
         const isLight =
@@ -167,14 +167,6 @@
       function ping() {
         if (navigator.vibrate) navigator.vibrate(80);
       }
-
-      // --- Maps available ---
-      const MAPS = {
-        current: {
-          src: document.body.dataset.mapImage || "/images/fortnite-map.png",
-          label: "Current (API)",
-        },
-      };
 
       // --- DOM refs ---
       const marker = document.getElementById("marker");
@@ -218,6 +210,18 @@
         timeout: 20000,
       });
 
+      const fab = document.getElementById("fabRandom");
+      fab.addEventListener("click", () => {
+        const mapId = document.body.dataset.currentMap || "current";
+        socket.emit("newRandom", { mapId }, (res) => {
+          if (!res || !res.ok) {
+            // ask server to re-send a location if the first try failed
+            socket.emit("joinMap", { mapId });
+          }
+        });
+        ping();
+      });
+
       function ensureConnected() {
         if (socket.disconnected) socket.connect();
       }
@@ -259,38 +263,18 @@
 
       window.addEventListener("online", ensureConnected);
 
-      // --- Map init ---
-      const savedMapId = localStorage.getItem("mapId");
-      const serverMapId = document.body.dataset.currentMap || "current";
-      const startMapId = savedMapId || serverMapId;
-
-      function applyMap(mapId) {
-        const m = MAPS[mapId] || MAPS.current;
-        mapImg.src = m.src;
-        mapImg.alt = m.label;
-        document.body.dataset.currentMap = mapId;
-        // No select; single dynamic map
-        localStorage.setItem("mapId", mapId);
-        socket.emit("joinMap", { mapId });
-      }
-      applyMap(startMapId);
-      // no-op: single map
-
-      // Drop action
-      const fab = document.getElementById("fabRandom");
-      fab.addEventListener("click", () => {
-        const mapId = document.body.dataset.currentMap || "current";
-        socket.emit("newRandom", { mapId });
-        ping();
-      });
-
       // Socket updates
       socket.on("update", (loc) => {
-        if (loc.mapId && loc.mapId !== document.body.dataset.currentMap)
-          applyMap(loc.mapId);
-        if (loc.mapImage) mapImg.src = loc.mapImage;
-        document.getElementById("locationText").textContent = loc.id;
-        positionMarker(loc.x, loc.y);
+        if (loc.mapId) {
+          document.body.dataset.currentMap = loc.mapId; // single map for now
+        }
+        if (loc.mapImage) {
+          mapImg.src = loc.mapImage; // server-controlled (remote API URL)
+        }
+        document.getElementById("locationText").textContent =
+          loc.name || loc.id;
+
+        positionMarker(Number(loc.x), Number(loc.y));
         marker.classList.add("bounce-once");
         setTimeout(() => marker.classList.remove("bounce-once"), 500);
         ping();
@@ -349,34 +333,34 @@
         function render(data) {
           const s = data.all || {};
           outEl.innerHTML = `
-            <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
-              s.matches ?? "-"
-            }</span></div>
-            <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
-              s.wins ?? "-"
-            }</span></div>
-            <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
-              s.winRate ?? "-"
-            }</span></div>
-            <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
-              s.kills ?? "-"
-            }</span></div>
-            <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
-              s.kd ?? "-"
-            }</span></div>
-            <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
-              s.top10 ?? "-"
-            }</span></div>
-            <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
-              s.score ?? "-"
-            }</span></div>
-          `;
+                  <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
+                    s.matches ?? "-"
+                  }</span></div>
+                  <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
+                    s.wins ?? "-"
+                  }</span></div>
+                  <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
+                    s.winRate ?? "-"
+                  }</span></div>
+                  <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
+                    s.kills ?? "-"
+                  }</span></div>
+                  <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
+                    s.kd ?? "-"
+                  }</span></div>
+                  <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
+                    s.top10 ?? "-"
+                  }</span></div>
+                  <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
+                    s.score ?? "-"
+                  }</span></div>
+                `;
         }
 
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
           const name = nameEl.value.trim();
-          const platform = platEl.value;
+          const platform = "epic";
           if (!name) return;
           statusEl.textContent = "Loading…";
           outEl.innerHTML = "";
@@ -399,5 +383,8 @@
         });
       })();
     </script>
+    <% if (typeof __dev !== "undefined" && __dev) { %>
+    <script src="/js/devmode.js" defer></script>
+    <% } %>
   </body>
 </html>

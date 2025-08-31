@@ -1,0 +1,83 @@
+{
+  "pois": [
+    {
+      "id": "murels-favorit-mezlk4ct",
+      "name": "Murels favorit",
+      "x": 0.6,
+      "y": 0.17
+    },
+    {
+      "id": "Athena.Location.POI.Generic.09",
+      "name": "Outpost 1",
+      "x": 0.4,
+      "y": 0.21
+    },
+    {
+      "id": "Athena.Location.POI.Generic.25",
+      "name": "RESISTANCE BASE",
+      "x": 0.22,
+      "y": 0.21
+    },
+    {
+      "id": "Athena.Location.POI.Generic.02",
+      "name": "Supernova Academy",
+      "x": 0.51,
+      "y": 0.25
+    },
+    {
+      "id": "Athena.Location.POI.Generic.22",
+      "name": "The Hive",
+      "x": 0.35000000000000003,
+      "y": 0.32
+    },
+    {
+      "id": "Athena.Location.POI.Generic.10",
+      "name": "O.X.R. HQ",
+      "x": 0.62,
+      "y": 0.38
+    },
+    {
+      "id": "Athena.Location.POI.Generic.17",
+      "name": "Swarmy Stash",
+      "x": 0.51,
+      "y": 0.36
+    },
+    {
+      "id": "Athena.Location.POI.Generic.18",
+      "name": "Deamon's Debris",
+      "x": 0.51,
+      "y": 0.74
+    },
+    {
+      "id": "Athena.Location.POI.Generic.06",
+      "name": "Dystopia City",
+      "x": 0.66,
+      "y": 0.54
+    },
+    {
+      "id": "Athena.Location.POI.Generic.EE.02",
+      "name": "SHINING SPAN",
+      "x": 0.77,
+      "y": 0.52
+    },
+    {
+      "id": "tanken-mezmlu90",
+      "name": "Tanken",
+      "x": 0.22,
+      "y": 0.32
+    },
+    {
+      "id": "tennisbane-mezmm5kk",
+      "name": "Tennisbane",
+      "x": 0.74,
+      "y": 0.64
+    },
+    {
+      "id": "outpost-2-mezmmlf6",
+      "name": "Outpost 2",
+      "x": 0.7000000000000001,
+      "y": 0.73
+    }
+  ],
+  "updatedAt": 1756640884722
+}

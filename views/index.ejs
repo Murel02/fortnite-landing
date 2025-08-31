@@ -149,18 +149,23 @@
         applyThemeMeta();
       });
 
-      (function ownerLongPressUnlock() {
+      (function ownerUnlockGesture() {
         const titleEl = document.querySelector(".app-title");
         if (!titleEl) return;
 
-        let t = null,
-          pressed = false;
-        titleEl.addEventListener("pointerdown", () => {
-          pressed = true;
-          t = setTimeout(async () => {
-            if (!pressed) return;
-            const secret = prompt("Enter owner secret:");
-            if (!secret) return;
+        // Slå iOS' contextmenu fra på elementet (ellers får vi pointercancel)
+        titleEl.addEventListener("contextmenu", (e) => e.preventDefault());
+
+        // --- Long press (primær) ---
+        let pressTimer = null;
+        let pressed = false;
+
+        const LONG_PRESS_MS = 800;
+
+        function askOwnerSecret() {
+          const secret = prompt("Enter owner secret:");
+          if (!secret) return;
+          (async () => {
             try {
               const body = new URLSearchParams({ owner: secret });
               const res = await fetch("/owner/activate", {
@@ -177,17 +182,64 @@
               console.error(e);
               alert("Network error.");
             }
-          }, 800); // long-press threshold
-        });
+          })();
+        }
 
-        ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => {
-          titleEl.addEventListener(evt, () => {
-            pressed = false;
-            if (t) {
-              clearTimeout(t);
-              t = null;
-            }
+        function startPress() {
+          pressed = true;
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(() => {
+            if (pressed) askOwnerSecret();
+          }, LONG_PRESS_MS);
+        }
+        function endPress() {
+          pressed = false;
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+
+        // Pointer events, med touch/mouse fallback
+        if (window.PointerEvent) {
+          titleEl.addEventListener("pointerdown", startPress);
+          ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => {
+            titleEl.addEventListener(evt, endPress);
           });
+        } else {
+          // Safari fallback (gamle)
+          titleEl.addEventListener(
+            "touchstart",
+            (e) => {
+              e.preventDefault();
+              startPress();
+            },
+            { passive: false }
+          );
+          ["touchend", "touchcancel", "mouseleave"].forEach((evt) => {
+            titleEl.addEventListener(evt, endPress);
+          });
+          titleEl.addEventListener("mousedown", startPress);
+          ["mouseup", "mouseleave", "blur"].forEach((evt) => {
+            titleEl.addEventListener(evt, endPress);
+          });
+        }
+
+        // --- Fallback: 5 hurtige taps inden for 2.5s ---
+        let taps = 0;
+        let tapWindow = null;
+        titleEl.addEventListener("click", () => {
+          taps += 1;
+          if (!tapWindow) {
+            tapWindow = setTimeout(() => {
+              taps = 0;
+              tapWindow = null;
+            }, 2500);
+          }
+          if (taps >= 5) {
+            clearTimeout(tapWindow);
+            tapWindow = null;
+            taps = 0;
+            askOwnerSecret();
+          }
         });
       })();
 

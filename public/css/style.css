@@ -115,6 +115,11 @@ body {
   color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  /* Gør titel trykbar uden iOS-callout og tekstmarkering */
+
+  -webkit-touch-callout: none;
+  user-select: none;
+  cursor: pointer;
 }
 
 .icon-btn {

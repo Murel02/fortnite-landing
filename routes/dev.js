@@ -1,17 +1,18 @@
 const express = require("express");
 const {
-  list, // dev list
-  add, // create dev poi
-  update, // update dev poi
-  remove, // delete dev poi
-  saveAll, // bulk replace
+  list,
+  add,
+  update,
+  remove,
+  saveAll,
 } = require("../models/devPoisStore");
 const { getPoiList } = require("../models/fortniteMap");
 
 const router = express.Router();
 
-// JSON body
+// Parse both JSON and x-www-form-urlencoded bodies for this router
 router.use(express.json());
+router.use(express.urlencoded({ extended: true }));
 
 // Hent ALLE DEV-POIs
 router.get("/api/dev/pois", (_req, res) => {

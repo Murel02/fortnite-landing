@@ -1,13 +1,12 @@
-// app.js
 require("dotenv").config();
 
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const path = require("path");
-const devGuard = require("./middleware/devGuard");
-const devRoutes = require("./routes/dev");
 const cookieParser = require("cookie-parser");
+
+const devGuard = require("./middleware/devGuard");
 const owner = require("./middleware/owner");
 
 const app = express();
@@ -16,10 +15,13 @@ const app = express();
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+// Core middleware (ORDER MATTERS)
 app.use(cookieParser());
+// Body parsing MUST come before owner/devGuard so they can read req.body
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json()); // harmless to have both; useful for JSON posts
 app.use(owner);
 app.use(devGuard);
-
 
 // --- Static (PUBLIC) with SW no-cache
 app.use(
@@ -31,9 +33,6 @@ app.use(
   })
 );
 
-// Body parsing for forms/share target
-app.use(express.urlencoded({ extended: true }));
-
 // --- Create HTTP server BEFORE Socket.IO
 const server = http.createServer(app);
 
@@ -43,8 +42,6 @@ const io = socketIo(server, {
   pingInterval: 10000,
   pingTimeout: 25000,
 });
-
-// Register socket handlers
 require("./sockets/mapSocket")(io);
 
 // --- Routes
@@ -52,14 +49,16 @@ const basicAuth = require("./middleware/basicAuth");
 const indexRoutes = require("./routes/indexRoutes");
 const mapRoutes = require("./routes/mapRoutes");
 const apiRoutes = require("./routes/apiRoutes");
+const devRoutes = require("./routes/dev");
 
 // Public routes (no auth: allow PWA install and direct /app access)
 app.use("/", mapRoutes);
 
+// Dev routes (owner/dev toggles & dev APIs)
 app.use(devRoutes);
 
 // Protected routes (require Basic Auth)
-app.use("/api", apiRoutes);
+app.use("/api", apiRoutes); // hvis du vil beskytte /api, sæt basicAuth her
 app.use("/", basicAuth, indexRoutes);
 
 // Health & noise

@@ -12,25 +12,25 @@
     <% } %>
   </head>
   <body
-  data-current-map="<%= currentMap || 'current' %>"
-  data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
-  data-dev="<%= (typeof __dev !== 'undefined' && __dev) ? '1' : '0' %>"
->
+    data-current-map="<%= currentMap || 'current' %>"
+    data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
+    data-dev="<%= (typeof __dev !== 'undefined' && __dev) ? '1' : '0' %>"
+  >
     <!-- Header -->
-    <header class="hero container hero--compact">
-      <div class="hero__bar">
-        <h1 class="app-title">Drop Picker</h1>
+    <div class="hero__bar">
+      <h1 class="app-title">Drop Picker</h1>
+      <div class="hero__actions">
+        <% if (typeof __owner !== "undefined" && __owner) { %>
+        <button id="devToggle" class="icon-btn dev-toggle" title="Toggle Dev">
+          🧪 <span id="devState"><%= __dev ? "On" : "Off" %></span>
+        </button>
+        <% } %>
         <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
           🌙
         </button>
       </div>
-    </header>
-
-    <% if (typeof __owner !== "undefined" && __owner) { %>
-    <button id="devToggle" class="dev-toggle" title="Toggle Dev">
-      🧪 Dev: <span id="devState"><%= __dev ? "On" : "Off" %></span>
-    </button>
-    <% } %> <% if (typeof __dev !== "undefined" && __dev) { %> <%-
+    </div>
+    <% if (typeof __dev !== "undefined" && __dev) { %> <%-
     include("partials/devpanel") %> <% } %>
 
     <!-- Map -->

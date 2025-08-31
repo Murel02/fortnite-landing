@@ -115,4 +115,22 @@ router.post("/api/dev/pois/promote", (req, res) => {
   }
 });
 
+router.post("/dev/toggle", (req, res) => {
+  if (!res.locals.__owner) {
+    return res.status(403).json({ error: "Owner required" });
+  }
+  const on =
+    req.body?.on === "1" || req.body?.on === "true" || req.body?.on === "on";
+  if (on) {
+    res.cookie("dev", "1", {
+      maxAge: 12 * 60 * 60 * 1000, // 12 timer
+      httpOnly: false,
+      sameSite: "Lax",
+    });
+  } else {
+    res.clearCookie("dev");
+  }
+  return res.json({ ok: true, dev: on });
+});
+
 module.exports = router;

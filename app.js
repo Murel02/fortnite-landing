@@ -8,6 +8,7 @@ const path = require("path");
 const devGuard = require("./middleware/devGuard");
 const devRoutes = require("./routes/dev");
 const cookieParser = require("cookie-parser");
+const owner = require("./middleware/owner");
 
 const app = express();
 
@@ -16,7 +17,9 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use(cookieParser());
+app.use(owner);
 app.use(devGuard);
+
 
 // --- Static (PUBLIC) with SW no-cache
 app.use(
@@ -54,13 +57,9 @@ const apiRoutes = require("./routes/apiRoutes");
 app.use("/", mapRoutes);
 
 app.use(devRoutes);
-app.get("/__dev", (req, res) =>
-  res.json({ dev: !!res.locals.__dev, cookie: req.cookies.dev })
-);
-
 
 // Protected routes (require Basic Auth)
-app.use("/api", basicAuth, apiRoutes);
+app.use("/api", apiRoutes);
 app.use("/", basicAuth, indexRoutes);
 
 // Health & noise

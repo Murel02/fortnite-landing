@@ -25,7 +25,12 @@
       </div>
     </header>
 
-    <%- include("partials/devpanel") %>
+    <% if (typeof __owner !== "undefined" && __owner) { %>
+    <button id="devToggle" class="dev-toggle" title="Toggle Dev">
+      🧪 Dev: <span id="devState"><%= __dev ? "On" : "Off" %></span>
+    </button>
+    <% } %> <% if (typeof __dev !== "undefined" && __dev) { %> <%-
+    include("partials/devpanel") %> <% } %>
 
     <!-- Map -->
     <main class="map-bleed">
@@ -144,6 +149,31 @@
         applyThemeMeta();
       });
 
+      (function initDevToggle() {
+        const btn = document.getElementById("devToggle");
+        if (!btn) return;
+        const stateEl = document.getElementById("devState");
+
+        btn.addEventListener("click", async () => {
+          const nextOn = (stateEl.textContent || "").toLowerCase() !== "on";
+          const body = new URLSearchParams({ on: nextOn ? "1" : "0" });
+          try {
+            const res = await fetch("/dev/toggle", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body,
+            });
+            if (!res.ok) throw new Error("toggle failed");
+            const data = await res.json();
+            stateEl.textContent = data.dev ? "On" : "Off";
+            // Reload for at indlæse dev CSS/panel korrekt:
+            location.reload();
+          } catch (e) {
+            console.error("Dev toggle error", e);
+          }
+        });
+      })();
+
       // --- Bottom sheet toggle ---
       const sheet = document.getElementById("sheet");
       const sheetToggle = document.getElementById("sheetToggle");
@@ -164,8 +194,19 @@
       });
 
       // --- Haptics helper ---
+      let canHaptic = false;
+      window.addEventListener(
+        "pointerdown",
+        () => {
+          canHaptic = true;
+        },
+        { once: true }
+      );
+
       function ping() {
-        if (navigator.vibrate) navigator.vibrate(80);
+        if (canHaptic && navigator.vibrate) {
+          navigator.vibrate(80);
+        }
       }
 
       // --- DOM refs ---
@@ -322,53 +363,58 @@
       );
 
       // --- Stats lookup ---
+      // --- Stats lookup ---
       (function initStats() {
         const form = document.getElementById("statsForm");
         if (!form) return;
         const nameEl = document.getElementById("statsName");
-        const platEl = document.getElementById("statsPlatform");
         const statusEl = document.getElementById("statsStatus");
         const outEl = document.getElementById("statsResult");
 
         function render(data) {
           const s = data.all || {};
+          const scopeLabel =
+            data.scope === "season" ? `Season: ${data.season}` : "Global";
           outEl.innerHTML = `
-                  <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
-                    s.matches ?? "-"
-                  }</span></div>
-                  <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
-                    s.wins ?? "-"
-                  }</span></div>
-                  <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
-                    s.winRate ?? "-"
-                  }</span></div>
-                  <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
-                    s.kills ?? "-"
-                  }</span></div>
-                  <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
-                    s.kd ?? "-"
-                  }</span></div>
-                  <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
-                    s.top10 ?? "-"
-                  }</span></div>
-                  <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
-                    s.score ?? "-"
-                  }</span></div>
-                `;
+        <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
+          s.matches ?? "-"
+        }</span></div>
+        <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
+          s.wins ?? "-"
+        }</span></div>
+        <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
+          s.winRate ?? "-"
+        }</span></div>
+        <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
+          s.kills ?? "-"
+        }</span></div>
+        <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
+          s.kd ?? "-"
+        }</span></div>
+        <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
+          s.top10 ?? "-"
+        }</span></div>
+        <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
+          s.score ?? "-"
+        }</span></div>
+        <div class="stat-card stat-card--muted"><span class="stat-label">Scope</span><span class="stat-value">${scopeLabel}</span></div>
+      `;
         }
 
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
           const name = nameEl.value.trim();
-          const platform = "epic";
           if (!name) return;
           statusEl.textContent = "Loading…";
           outEl.innerHTML = "";
           try {
+            // Default: season stats for current season
+            const scope = "season";
+            const season = "current";
             const res = await fetch(
               `/api/stats?name=${encodeURIComponent(
                 name
-              )}&platform=${encodeURIComponent(platform)}`,
+              )}&platform=epic&scope=${scope}&season=${season}`,
               { cache: "no-store" }
             );
             if (!res.ok) throw new Error("Request failed");

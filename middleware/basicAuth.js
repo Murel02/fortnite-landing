@@ -8,8 +8,8 @@ module.exports = function basicAuth(req, res, next) {
   }
   try {
     const [user, pass] = Buffer.from(base64, "base64").toString().split(":");
-    const U = process.env.BASIC_USER || "admin";
-    const P = process.env.BASIC_PASS || "admin";
+    const U = process.env.BASIC_USER || "fortnite";
+    const P = process.env.BASIC_PASS || "Medina";
     if (user === U && pass === P) return next();
   } catch (_) {}
   res.set("WWW-Authenticate", 'Basic realm="Restricted"');

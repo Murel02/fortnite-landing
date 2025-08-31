@@ -1,42 +1,55 @@
+// middleware/devGuard.js
 module.exports = function devGuard(req, res, next) {
-  const enabled = String(process.env.DEV_MODE_ENABLED || "false") === "true";
+  const enabled =
+    String(process.env.DEV_MODE_ENABLED || "false").toLowerCase() === "true";
   const secret = process.env.DEV_MODE_SECRET || "";
 
-  const q = req.query.dev;
-  const hasQueryTrue = q === "1" || q === "true";
-  const hasSecretOK = secret && q === secret;
+  const q = String(req.query.dev || "").toLowerCase();
 
-  // acceptér cookie fra tidligere
-  const cookieDev =
-    req.cookies &&
-    (req.cookies.dev === "1" ||
-      req.cookies.dev === "true" ||
-      (secret && req.cookies.dev === secret));
+  const qEnable =
+    q === "1" ||
+    q === "true" ||
+    q === "on" ||
+    (secret && req.query.dev === secret);
+  const qDisable = q === "0" || q === "false" || q === "off";
 
-  let isDev = false;
+  const cookieVal = (req.cookies && String(req.cookies.dev || "")) || "";
+  const cookieEnable =
+    cookieVal === "1" ||
+    cookieVal.toLowerCase() === "true" ||
+    (secret && cookieVal === secret);
 
-  // 1) hvis secret er sat: kræv enten korrekt secret i query ELLER cookie
+  // compute isDev
+  let isDev;
   if (secret) {
-    isDev = !!(hasSecretOK || cookieDev);
+    // kræv korrekt secret i query eller cookie, uanset enabled-flag
+    isDev = qEnable || cookieEnable;
   } else {
-    // 2) uden secret: tillad dev hvis enabled globalt, query=true, eller cookie
-    isDev = !!(enabled || hasQueryTrue || cookieDev);
+    // uden secret: tillad via global enable, query enable, eller cookie
+    isDev = enabled || qEnable || cookieEnable;
   }
 
-  // hvis der kom en dev-query, gem den i cookie (12 timer)
-  if (q) {
-    res.cookie("dev", q, {
-      httpOnly: false,
+  // persistér valg i cookie (12 timer)
+  if (qEnable) {
+    const val = secret && req.query.dev === secret ? secret : "1";
+    res.cookie("dev", val, {
       maxAge: 12 * 60 * 60 * 1000,
-      sameSite: "lax",
-      path: "/",
+      httpOnly: false,
+      sameSite: "Lax",
     });
+  } else if (qDisable) {
+    res.clearCookie("dev");
+    isDev = false;
   }
 
+  // GØR DETTE: brug den beregnede værdi
   res.locals.__dev = isDev;
+  req.isDev = isDev;
 
+  // beskyt dev-API'er
   if (!isDev && req.path.startsWith("/api/dev/")) {
     return res.status(403).json({ error: "Dev mode required" });
   }
+
   next();
 };

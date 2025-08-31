@@ -17,20 +17,18 @@ function num(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-// Sum helper
 function add(a, b) {
   return num(a) + num(b);
 }
 
 // Build an aggregate across modes if “all/overall” is missing
 function aggregateGlobalStats(gs = {}) {
-  // known buckets that often exist
   const buckets = [
     "all",
     "overall",
     "keyboardmouse",
     "gamepad",
-    "touch", // sometimes present
+    "touch",
     "solo",
     "duo",
     "squad",
@@ -40,7 +38,6 @@ function aggregateGlobalStats(gs = {}) {
     "rumble",
   ];
 
-  // Prefer a single “all/overall/*input*” if present
   for (const key of [
     "all",
     "overall",
@@ -52,7 +49,6 @@ function aggregateGlobalStats(gs = {}) {
     if (gs[key]) return { ...gs[key] };
   }
 
-  // Else, aggregate whatever buckets exist
   const acc = {
     matchesplayed: 0,
     placetop1: 0,
@@ -146,6 +142,11 @@ exports.getStats = async (req, res) => {
   try {
     const name = String(req.query.name || "").trim();
     const platform = String(req.query.platform || "epic").toLowerCase();
+
+    // NEW: scope + season (defaults for season stats)
+    const scope = String(req.query.scope || "season").toLowerCase(); // "season" | "global"
+    const season = String(req.query.season || "current").toLowerCase(); // "current" | "33" | ...
+
     if (!name) return res.status(400).json({ error: "Missing name" });
 
     const fioKey =
@@ -155,6 +156,8 @@ exports.getStats = async (req, res) => {
         return res.json({
           name,
           platform,
+          scope,
+          season,
           all: makeMockStats(name),
           note: "mocked (no FORTNITEAPI_IO_KEY)",
         });
@@ -186,6 +189,8 @@ exports.getStats = async (req, res) => {
         return res.json({
           name,
           platform,
+          scope,
+          season,
           all: makeMockStats(name),
           note: `mocked (lookup network error: ${e.code || e.message})`,
         });
@@ -201,6 +206,8 @@ exports.getStats = async (req, res) => {
         return res.json({
           name,
           platform,
+          scope,
+          season,
           all: makeMockStats(name),
           note: `mocked (lookup ${lookupResp.status})`,
           upstream: msg.slice(0, 300),
@@ -217,21 +224,25 @@ exports.getStats = async (req, res) => {
       lookup?.data?.accountId;
     const resolvedName =
       lookup?.displayName || lookup?.name || lookup?.data?.name || name;
+
     if (!accountId) {
       if (ALLOW_STATS_MOCK)
         return res.json({
           name,
           platform,
+          scope,
+          season,
           all: makeMockStats(name),
           note: "mocked (account not found)",
         });
       return res.status(404).json({ error: "Account not found" });
     }
 
-    // 2) stats by account id
-    const statsUrl = `${FIO_BASE}/v1/stats?account=${encodeURIComponent(
-      accountId
-    )}`;
+    // 2) stats by account id (SEASON by default)
+    const statsQ = new URLSearchParams({ account: accountId });
+    if (scope === "season") statsQ.set("season", season);
+    const statsUrl = `${FIO_BASE}/v1/stats?${statsQ.toString()}`;
+
     let statsResp;
     try {
       statsResp = await doFetch(
@@ -244,6 +255,8 @@ exports.getStats = async (req, res) => {
         return res.json({
           name: resolvedName,
           platform,
+          scope,
+          season,
           all: makeMockStats(name),
           note: `mocked (stats network error: ${e.code || e.message})`,
         });
@@ -256,7 +269,6 @@ exports.getStats = async (req, res) => {
 
     const payload = await statsResp.json();
 
-    // PRIVATE account: Fortnite privacy setting
     const isPrivate =
       payload?.code === "PRIVATE_ACCOUNT" ||
       payload?.error?.code === "PRIVATE_ACCOUNT" ||
@@ -266,6 +278,8 @@ exports.getStats = async (req, res) => {
         return res.json({
           name: resolvedName,
           platform,
+          scope,
+          season,
           all: makeMockStats(name),
           note: "mocked (private account)",
           raw: { accountId },
@@ -285,6 +299,8 @@ exports.getStats = async (req, res) => {
         return res.json({
           name: resolvedName,
           platform,
+          scope,
+          season,
           all: makeMockStats(name),
           note: `mocked (stats ${statsResp.status})`,
           upstream: msg.slice(0, 300),
@@ -295,7 +311,14 @@ exports.getStats = async (req, res) => {
     }
 
     const all = parseFioStats(payload);
-    return res.json({ name: resolvedName, platform, all, raw: { accountId } });
+    return res.json({
+      name: resolvedName,
+      platform,
+      scope,
+      season: scope === "season" ? season : "global",
+      all,
+      raw: { accountId },
+    });
   } catch (err) {
     console.error("getStats error:", err);
     res

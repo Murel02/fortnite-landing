@@ -30,7 +30,6 @@ module.exports = (io) => {
         };
 
         socket.emit("update", payload);
-        log("update → client", where, payload.id, payload.x, payload.y);
         return payload;
       } catch (e) {
         log("sendUpdate error", e?.message || e);

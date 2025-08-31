@@ -1,6 +1,5 @@
-
 {
-  "id": "/",
+  "id": "/app",
   "name": "Fortnite Random Drop",
   "short_name": "Drop Picker",
   "description": "Pick fair, random drop spots for your squad.",

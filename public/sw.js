@@ -1,14 +1,15 @@
 // /public/sw.js
-const CACHE = "drop-picker-v4"; // <-- bump this
+const CACHE = "drop-picker-v5"; // bump ved ændringer
 const ASSETS = [
-  "/", // keep the shell
+  "/", // shell
+  "/app?source=pwa", // app-UI som offline fallback
   "/images/fortnite-map.png",
   "/images/fortniteOG.png",
   "/manifest.webmanifest",
   "/socket.io/socket.io.js",
 ];
 
-// Install & cache (no CSS here on purpose)
+// Install: precache basen (uden CSS, så styles kan opdatere hurtigt)
 self.addEventListener("install", (e) => {
   e.waitUntil(
     caches
@@ -18,7 +19,7 @@ self.addEventListener("install", (e) => {
   );
 });
 
-// Activate: cleanup + navigation preload
+// Activate: ryd gamle caches + navigation preload + tag kontrol
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     (async () => {
@@ -26,21 +27,39 @@ self.addEventListener("activate", (e) => {
       await Promise.all(
         keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
       );
-      if (self.registration.navigationPreload)
-        await self.registration.navigationPreload.enable();
+      if (self.registration.navigationPreload) {
+        try {
+          await self.registration.navigationPreload.enable();
+        } catch {}
+      }
       await self.clients.claim();
+      // Fortæl klienter at der er ny SW (så UI kan reloade hvis man vil)
+      const clients = await self.clients.matchAll({
+        includeUncontrolled: true,
+      });
+      for (const client of clients) {
+        client.postMessage({ type: "SW_READY" });
+      }
     })()
   );
 });
 
-// Fetch: network-first for navigations/API, cache-first for static
+// Hjælpere
+function isImageRequest(url) {
+  return /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(url.pathname);
+}
+function isIcon(url) {
+  return url.pathname.startsWith("/icons/");
+}
+
+// Fetch: network-first for navigations og API; cache-first for statics; SWR for images/icons
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Don't interfere with socket transports
+  // Skip socket.io
   if (url.pathname.startsWith("/socket.io")) return;
 
-  // HTML navigations
+  // HTML navigations → network-first m. preload, fallback til /app
   if (e.request.mode === "navigate") {
     e.respondWith(
       (async () => {
@@ -48,6 +67,7 @@ self.addEventListener("fetch", (e) => {
           return (await e.preloadResponse) || (await fetch(e.request));
         } catch {
           return (
+            (await caches.match("/app?source=pwa")) ||
             (await caches.match("/")) ||
             new Response("Offline", { status: 503 })
           );
@@ -57,7 +77,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // CSS → network-first (so style changes appear at once)
+  // CSS → network-first (så design opdaterer hurtigt)
   if (url.pathname.startsWith("/css/")) {
     e.respondWith(
       fetch(e.request)
@@ -71,13 +91,33 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // API: network-first
+  // API → network-first (ingen cache-forurening)
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/share")) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
 
-  // Static: cache-first
+  // Images & icons → stale-while-revalidate (ignoreSearch håndterer querystrings/versioner)
+  if (isImageRequest(url) || isIcon(url)) {
+    e.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE);
+        const cached = await cache.match(e.request, { ignoreSearch: true });
+        const networkPromise = fetch(e.request)
+          .then((resp) => {
+            cache.put(e.request, resp.clone());
+            return resp;
+          })
+          .catch(() => null);
+        return (
+          cached || (await networkPromise) || new Response("", { status: 504 })
+        );
+      })()
+    );
+    return;
+  }
+
+  // Øvrige statics → cache-first, derefter læg i cache
   e.respondWith(
     caches.match(e.request).then(
       (r) =>
@@ -89,4 +129,11 @@ self.addEventListener("fetch", (e) => {
         })
     )
   );
+});
+
+// Opdaterings-flow: tillad klient at spørge SW om at skipWaiting
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });

@@ -149,6 +149,48 @@
         applyThemeMeta();
       });
 
+      (function ownerLongPressUnlock() {
+        const titleEl = document.querySelector(".app-title");
+        if (!titleEl) return;
+
+        let t = null,
+          pressed = false;
+        titleEl.addEventListener("pointerdown", () => {
+          pressed = true;
+          t = setTimeout(async () => {
+            if (!pressed) return;
+            const secret = prompt("Enter owner secret:");
+            if (!secret) return;
+            try {
+              const body = new URLSearchParams({ owner: secret });
+              const res = await fetch("/owner/activate", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body,
+              });
+              const data = await res.json();
+              if (data && data.ok) location.reload();
+              else alert("Owner secret incorrect.");
+            } catch (e) {
+              console.error(e);
+              alert("Network error.");
+            }
+          }, 800); // long-press threshold
+        });
+
+        ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => {
+          titleEl.addEventListener(evt, () => {
+            pressed = false;
+            if (t) {
+              clearTimeout(t);
+              t = null;
+            }
+          });
+        });
+      })();
+
       (function initDevToggle() {
         const btn = document.getElementById("devToggle");
         if (!btn) return;

@@ -133,4 +133,13 @@ router.post("/dev/toggle", (req, res) => {
   return res.json({ ok: true, dev: on });
 });
 
+router.post("/owner/activate", (req, res) => {
+  // selve cookie-sætningen sker i owner-middleware (den kører før routes)
+  // vi returnerer blot status, så client kan reloade
+  if (!res.locals.__owner) {
+    return res.status(401).json({ ok: false, message: "Owner secret invalid" });
+  }
+  return res.json({ ok: true });
+});
+
 module.exports = router;

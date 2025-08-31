@@ -1,80 +1,89 @@
-.devpanel {
+/* Alt i devmode er nu scoped til body[data-dev="1"] for at undgå sideeffekter */
+
+/* Panel */
+[data-dev="1"] .devpanel {
   margin: 1rem 0;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
 }
-.devpanel__row {
+[data-dev="1"] .devpanel__row {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 0.5rem;
 }
-.devpanel input[type="text"],
-.devpanel input[type="number"],
-.devpanel input {
+[data-dev="1"] .devpanel input[type="text"],
+[data-dev="1"] .devpanel input[type="number"],
+[data-dev="1"] .devpanel input {
   padding: 0.35rem 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(0, 0, 0, 0.2);
   color: #fff;
 }
-.devpanel table {
+[data-dev="1"] .devpanel table {
   width: 100%;
   border-collapse: collapse;
 }
-.devpanel th,
-.devpanel td {
+[data-dev="1"] .devpanel th,
+[data-dev="1"] .devpanel td {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 0.35rem;
 }
-.devpanel .btn.btn-xs {
+[data-dev="1"] .devpanel .btn.btn-xs {
   padding: 0.25rem 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
-.devpanel .muted {
+[data-dev="1"] .devpanel .muted {
   opacity: 0.75;
 }
 
-.devMarkerLayer {
+/* Marker-layer: ligger over kort-billedet men under øvrige UI */
+[data-dev="1"] .devMarkerLayer {
   position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
+  inset: 0;
+  pointer-events: none; /* klik går igennem som default */
+  z-index: 2; /* over map-img, under knapper/sheet */
 }
-.devMarker {
+
+/* Markører & labels må gerne fange events */
+[data-dev="1"] .devMarker,
+[data-dev="1"] .devLabel {
+  pointer-events: auto;
+}
+
+/* DEV markør (EN entydig definition) */
+[data-dev="1"] .devMarker {
   position: absolute;
   width: 14px;
   height: 14px;
   margin-left: -7px;
   margin-top: -7px;
   border-radius: 50%;
+  background: var(--marker-color, #ff3b30);
   border: 2px solid #fff;
-  background: #ff2a2a;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
-  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   cursor: grab;
 }
-.devMarker:active {
+[data-dev="1"] .devMarker:active {
   cursor: grabbing;
 }
 
 /* API markører (kun visning – klik/drag promoverer dem til dev) */
-.devMarker.devMarker--api {
+[data-dev="1"] .devMarker.devMarker--api {
   background: #2a7bff;
   border-color: #fff;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35),
     inset 0 0 0 2px rgba(255, 255, 255, 0.3);
-  opacity: 0.9;
+  opacity: 0.95;
 }
-.devMarker.devMarker--api::after {
+[data-dev="1"] .devMarker.devMarker--api::after {
   content: "A";
   position: absolute;
   inset: -2px 0 0 0;
@@ -86,31 +95,12 @@
   pointer-events: none;
 }
 
-/* Label ved markør */
-.devMarker {
+/* Labels */
+[data-dev="1"] .devLabel {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  margin-left: -5px;
-  margin-top: -5px;
-  border-radius: 50%;
-  background: var(--marker-color, #ff3b30);
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-}
-
-.devMarker.devMarker--api {
-  background: #2a7bff;
-  border-color: #fff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.3);
-}
-
-.devLabel {
-  position: absolute;
-  transform: translate(-50%, -14px);
   left: 50%;
   top: -10px;
+  transform: translate(-50%, -14px);
   white-space: nowrap;
   font-size: 12px;
   line-height: 1.3;
@@ -118,31 +108,12 @@
   color: #fff;
   padding: 2px 6px;
   border-radius: 6px;
-  pointer-events: auto; /* vigtig: så vi kan klikke/edite */
   user-select: text;
   -webkit-user-select: text;
 }
-
-.devLabel--api {
+[data-dev="1"] .devLabel--api {
   background: rgba(42, 123, 255, 0.85);
 }
-
-.devLabel.editing {
+[data-dev="1"] .devLabel.editing {
   outline: 1px dashed rgba(255, 255, 255, 0.7);
-}
-
-/* Marker-layer container */
-.devMarkerLayer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none; /* lader klik gå igennem */
-}
-
-/* men labels/markører må gerne tage events */
-.devMarker,
-.devLabel {
-  pointer-events: auto;
 }

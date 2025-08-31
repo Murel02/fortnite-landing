@@ -12,9 +12,10 @@
     <% } %>
   </head>
   <body
-    data-current-map="<%= currentMap || 'current' %>"
-    data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
-  >
+  data-current-map="<%= currentMap || 'current' %>"
+  data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
+  data-dev="<%= (typeof __dev !== 'undefined' && __dev) ? '1' : '0' %>"
+>
     <!-- Header -->
     <header class="hero container hero--compact">
       <div class="hero__bar">

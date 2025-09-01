@@ -1,4 +1,4 @@
-/* Alt i devmode er nu scoped til body[data-dev="1"] for at undgå sideeffekter */
+/* devmode.css */
 
 /* Panel */
 [data-dev="1"] .devpanel {

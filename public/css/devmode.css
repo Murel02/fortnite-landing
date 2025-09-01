@@ -117,3 +117,65 @@
 [data-dev="1"] .devLabel.editing {
   outline: 1px dashed rgba(255, 255, 255, 0.7);
 }
+
+/* === Mobile-friendly devmode (≤ 600px) === */
+@media (max-width: 600px) {
+  /* Panelet bliver en let overlay under headeren */
+  [data-dev="1"] .devpanel {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: calc(56px + env(safe-area-inset-top) + 8px); /* under header */
+    z-index: 60; /* over map/sheet */
+    max-height: 48vh; /* undgå at dække for meget */
+    overflow: auto; /* scroll indholdet i stedet for hele siden */
+    padding: 0.5rem;
+    border-radius: 12px;
+    backdrop-filter: blur(6px) saturate(110%);
+  }
+
+  /* Tighter spacing/typografi */
+  [data-dev="1"] .devpanel__row {
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+    flex-direction: column; /* stak rækkerne på smal skærm */
+    align-items: stretch;
+  }
+  [data-dev="1"] .devpanel input[type="text"],
+  [data-dev="1"] .devpanel input[type="number"],
+  [data-dev="1"] .devpanel input {
+    padding: 0.4rem 0.5rem;
+    font-size: 13px;
+  }
+  [data-dev="1"] .devpanel .btn.btn-xs {
+    min-height: 40px; /* touch target */
+    font-size: 13px;
+  }
+
+  /* Tabel: gør den scrollable vandret i stedet for at presse layoutet */
+  [data-dev="1"] .devpanel .devpanel__list {
+    overflow-x: auto;
+  }
+  [data-dev="1"] .devpanel table {
+    width: 640px; /* bevar kolonner, men kræv scroll på mobil */
+  }
+  [data-dev="1"] .devpanel th,
+  [data-dev="1"] .devpanel td {
+    white-space: nowrap;
+    padding: 0.3rem;
+    font-size: 13px;
+  }
+
+  /* Sørg for at Drop-knappen ikke bliver dækket af panelet */
+  .bottom-bar {
+    z-index: 70;
+  }
+}
+
+/* Ekstra: skjul evt. gammel flydende dev-FAB hvis den findes */
+.dev-fab,
+.dev-toggle-float,
+.corner-toggle,
+#devFab {
+  display: none !important;
+}

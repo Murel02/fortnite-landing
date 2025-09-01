@@ -17,23 +17,25 @@
     data-dev="<%= (typeof __dev !== 'undefined' && __dev) ? '1' : '0' %>"
   >
     <!-- Header -->
-    <div class="hero__bar">
-      <h1 class="app-title">Drop Picker</h1>
+    <header>
+      <div class="hero__bar">
+        <h1 class="app-title">Drop Picker</h1>
 
-      <div class="hero__actions">
-        <!-- Dev toggle (vises kun for owner) -->
-        <% if (typeof __owner !== "undefined" && __owner) { %>
-        <button id="devToggle" class="icon-btn dev-toggle" title="Toggle Dev">
-          🧪 <span id="devState"><%= __dev ? "On" : "Off" %></span>
-        </button>
-        <% } %>
+        <div class="hero__actions">
+          <!-- Dev toggle (vises kun for owner) -->
+          <% if (typeof __owner !== "undefined" && __owner) { %>
+          <button id="devToggle" class="icon-btn dev-toggle" title="Toggle Dev">
+            🧪 <span id="devState"><%= __dev ? "On" : "Off" %></span>
+          </button>
+          <% } %>
 
-        <!-- Theme toggle -->
-        <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-          🌙
-        </button>
+          <!-- Theme toggle -->
+          <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
+            🌙
+          </button>
+        </div>
       </div>
-    </div>
+    </header>
 
     <% if (typeof __dev !== "undefined" && __dev) { %> <%-
     include("partials/devpanel") %> <% } %>

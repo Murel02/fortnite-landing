@@ -1,6 +1,5 @@
 /* style.css */
 
-
 /* =============== */
 /* THEME & BASICS  */
 /* =============== */
@@ -251,6 +250,7 @@ body {
   right: 0;
   bottom: 0;
   z-index: 40;
+  z-index: 999;
 }
 .primary-cta {
   width: 100vw;
@@ -507,7 +507,6 @@ body {
   color: var(--text-light);
   border: 1px solid var(--hairline);
 }
-
 
 /* =============== */
 /* ACCESSIBILITY   */

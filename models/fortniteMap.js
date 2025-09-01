@@ -414,8 +414,45 @@ const stateByMap = {
   },
 };
 
+// ---- Shared “live pick” helpers (one truth per map) -----------------------
+function buildPayload(mapId) {
+  const st = stateByMap[mapId];
+  if (!st || !st.location) return null;
+  const { location, round = 0, at = 0 } = st;
+  return {
+    mapId,
+    id: location.id,
+    name: location.name || location.id,
+    x: Number(location.x),
+    y: Number(location.y),
+    round,
+    at,
+    // include current map image so late joiners sync visuals too
+    mapImage: (fortniteMapCache && fortniteMapCache.imageUrl) || null,
+  };
+}
+
+function getLatest(mapId = "current") {
+  return buildPayload(mapId);
+}
+
+function newPick(mapId = "current") {
+  const loc = getRandomDynamicLocation();
+  const prev = stateByMap[mapId] || { mapId, round: 0 };
+  stateByMap[mapId] = {
+    mapId,
+    location: loc,
+    round: (prev.round || 0) + 1,
+    at: Date.now(),
+  };
+  return buildPayload(mapId);
+}
+
+function getOrCreate(mapId = "current") {
+  return getLatest(mapId) || newPick(mapId);
+}
+
 module.exports = {
-  fortniteMapCache,
   refreshFortniteMap,
   getPoiList,
   getRandomDynamicLocation,
@@ -423,4 +460,7 @@ module.exports = {
   stateByMap,
   getLastDebug,
   getMapCache,
+  getLatest,
+  newPick,
+  getOrCreate,
 };

@@ -1,60 +1,37 @@
 // sockets/mapSocket.js
-// IMPORTANT: don't destructure from the model to avoid circular require issues.
-const fortniteMap = require("../models/fortniteMap");
+const { getLatest, newPick, getOrCreate } = require("../models/fortniteMap");
 
-module.exports = (io) => {
+module.exports = function attachMapSocket(io) {
   io.on("connection", (socket) => {
-    const log = (...args) => console.log("[socket]", socket.id, ...args);
+    function joinMap(mapId = "current") {
+      // leave all non-private rooms
+      for (const r of socket.rooms) if (r !== socket.id) socket.leave(r);
+      socket.join(mapId);
 
-    async function sendUpdate(where = "init", force = false) {
-      try {
-        if (typeof fortniteMap.refreshFortniteMap === "function") {
-          await fortniteMap.refreshFortniteMap(force);
-        }
-
-        const getLoc =
-          typeof fortniteMap.getRandomDynamicLocation === "function"
-            ? fortniteMap.getRandomDynamicLocation
-            : () => ({ id: "Center", name: "Center", x: 0.5, y: 0.5 });
-
-        const loc = getLoc();
-        const imageUrl =
-          (fortniteMap.fortniteMapCache &&
-            fortniteMap.fortniteMapCache.imageUrl) ||
-          "";
-
-        const payload = {
-          ...loc,
-          mapId: "current",
-          mapImage: imageUrl,
-        };
-
-        socket.emit("update", payload);
-        return payload;
-      } catch (e) {
-        log("sendUpdate error", e?.message || e);
-        return null;
-      }
+      // send current pick immediately (late joiners)
+      const latest = getLatest(mapId);
+      if (latest) socket.emit("update", latest);
     }
 
-    // First payload
-    sendUpdate("connect");
+    // default room until client says otherwise
+    joinMap("current");
 
-    // Join (kept for future multi-map support)
-    socket.on("joinMap", async (_data = {}, ack) => {
-      const payload = await sendUpdate("joinMap");
-      if (typeof ack === "function") ack({ ok: !!payload, payload });
+    socket.on("joinMap", ({ mapId } = {}, ack) => {
+      joinMap(mapId || "current");
+      ack && ack({ ok: true });
     });
 
-    // New random drop
-    socket.on("newRandom", async (_data = {}, ack) => {
-      const payload = await sendUpdate("newRandom");
-      if (typeof ack === "function") ack({ ok: !!payload, payload });
+    socket.on("newRandom", ({ mapId } = {}, ack) => {
+      const m = mapId || "current";
+      const payload = newPick(m); // one server decision
+      io.to(m).emit("update", payload); // broadcast same pick to everyone
+      ack && ack({ ok: true });
     });
 
-    // Optional health ping
-    socket.on("ping:alive", (ack) => {
-      if (typeof ack === "function") ack({ ok: true, ts: Date.now() });
+    // optional: on connect ensure there’s a pick (helps first visitor)
+    socket.once("connect_init", ({ mapId } = {}) => {
+      const payload = getOrCreate(mapId || "current");
+      socket.emit("update", payload);
     });
   });
 };

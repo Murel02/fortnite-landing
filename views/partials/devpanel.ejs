@@ -1,49 +1,90 @@
-<% if (typeof __dev !== "undefined" && __dev) { %>
-<div class="devpanel">
-  <div class="devpanel__row">
+<!-- Dev mode panel styled with Tailwind utility classes. Only shown when __dev is truthy. -->
+<div
+  class="devpanel my-4 p-3 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] rounded-lg"
+>
+  <div class="devpanel__row flex gap-2 items-center flex-wrap mb-2">
     <strong>Dev Mode</strong>
-    <button id="devToggleMarkers" class="btn btn-xs">Vis/skjul markører</button>
-    <button id="devExport" class="btn btn-xs">Export JSON</button>
-    <button id="devShowAll" class="btn btn-xs">Vis alle POIs</button>
-
-    <label class="btn btn-xs file">
+    <button
+      id="devToggleMarkers"
+      class="btn btn-xs px-2 py-1 rounded-md border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] text-white text-sm"
+    >
+      Vis/skjul markører
+    </button>
+    <button
+      id="devExport"
+      class="btn btn-xs px-2 py-1 rounded-md border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] text-white text-sm"
+    >
+      Export JSON
+    </button>
+    <button
+      id="devShowAll"
+      class="btn btn-xs px-2 py-1 rounded-md border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] text-white text-sm"
+    >
+      Vis alle POIs
+    </button>
+    <label
+      class="btn btn-xs file relative inline-flex items-center px-2 py-1 rounded-md border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] text-white text-sm cursor-pointer"
+    >
       Import JSON
       <input type="file" id="devImportFile" accept="application/json" hidden />
     </label>
   </div>
-
-  <!-- NY: QoL-række -->
-  <div class="devpanel__row">
-    <label style="display: flex; align-items: center; gap: 0.4rem">
-      <input type="checkbox" id="devSnap" checked />
+  <div class="devpanel__row flex gap-2 items-center flex-wrap mb-2">
+    <label class="inline-flex items-center gap-1 text-sm">
+      <input type="checkbox" id="devSnap" checked class="mr-1" />
       Snap (1% grid)
     </label>
-    <button id="devBulkPaste" class="btn btn-xs">Bulk paste (x y name)</button>
-    <button id="devCopyJS" class="btn btn-xs">Copy as JS</button>
+    <button
+      id="devBulkPaste"
+      class="btn btn-xs px-2 py-1 rounded-md border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] text-white text-sm"
+    >
+      Bulk paste (x y name)
+    </button>
+    <button
+      id="devCopyJS"
+      class="btn btn-xs px-2 py-1 rounded-md border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] text-white text-sm"
+    >
+      Copy as JS
+    </button>
   </div>
-
-  <div class="devpanel__row">
-    <label
-      >Navn:
-      <input id="devName" placeholder="Ny lokation..." />
+  <div class="devpanel__row flex flex-col gap-1 mb-2">
+    <label class="text-sm">
+      Navn:
+      <input
+        id="devName"
+        placeholder="Ny lokation..."
+        class="ml-1 p-1.5 rounded-md border border-[rgba(255,255,255,0.15)] bg-[rgba(0,0,0,0.2)] text-white text-sm"
+      />
     </label>
-    <span class="muted"
+    <span class="muted text-sm opacity-75"
       >Klik på kortet for at tilføje (x,y sættes automatisk)</span
     >
   </div>
-
-  <div class="devpanel__list">
-    <table>
+  <div class="devpanel__list overflow-auto">
+    <table class="min-w-full border-collapse">
       <thead>
         <tr>
-          <th>Navn</th>
-          <th>X</th>
-          <th>Y</th>
-          <th></th>
+          <th
+            class="border-t border-[rgba(255,255,255,0.08)] p-1 text-left text-sm"
+          >
+            Navn
+          </th>
+          <th
+            class="border-t border-[rgba(255,255,255,0.08)] p-1 text-left text-sm"
+          >
+            X
+          </th>
+          <th
+            class="border-t border-[rgba(255,255,255,0.08)] p-1 text-left text-sm"
+          >
+            Y
+          </th>
+          <th
+            class="border-t border-[rgba(255,255,255,0.08)] p-1 text-left text-sm"
+          ></th>
         </tr>
       </thead>
       <tbody id="devList"></tbody>
     </table>
   </div>
 </div>
-<% } %>

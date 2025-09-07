@@ -1,3 +1,11 @@
+<!--
+  TailwindCSS powered version of the Fortnite landing picker.
+
+  This template embraces utility‑first styling via Tailwind. It preserves
+  the original functionality while using CSS variables for theming and a
+  few bespoke styles for animations and transitions. The dark/light
+  theme is toggled via the data-theme attribute on the document element.
+-->
 <!doctype html>
 <html lang="en">
   <head>
@@ -6,46 +14,140 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Fortnite Random Drop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/css/style.css?v=4" />
-    <% if (typeof __dev !== "undefined" && __dev) { %>
-    <link rel="stylesheet" href="/css/devmode.css" />
-    <% } %>
+    <!-- Load Tailwind via CDN. This script injects Tailwind's utility classes at runtime. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom properties for theming, along with bespoke marker and sheet styles -->
+    <style>
+      :root {
+        --bg-start: #0b0226;
+        --bg-end: #1a0c3b;
+        --primary: #a938db;
+        --primary-dark: #7d2db1;
+        --accent: #00d1ff;
+        --text-light: #e7eaf2;
+        --muted: rgba(255, 255, 255, 0.64);
+        --card-bg: rgba(255, 255, 255, 0.06);
+        --hairline: rgba(255, 255, 255, 0.12);
+        --marker-color: #ff2a2a;
+        --radius: 14px;
+        --radius-lg: 16px;
+        --tap: 48px;
+      }
+      :root[data-theme="light"] {
+        --bg-start: #f5f7ff;
+        --bg-end: #e8ecfb;
+        --primary: #6b4dd8;
+        --primary-dark: #543ebb;
+        --accent: #005fcc;
+        --text-light: #111827;
+        --muted: rgba(0, 0, 0, 0.64);
+        --card-bg: rgba(0, 0, 0, 0.06);
+        --hairline: rgba(0, 0, 0, 0.12);
+      }
+      .random-marker {
+        position: absolute;
+        width: clamp(18px, 5.2vw, 28px);
+        height: clamp(18px, 5.2vw, 28px);
+        border-radius: 50%;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--marker-color);
+        box-shadow: 0 0 18px var(--marker-color),
+          0 0 36px rgba(0, 0, 0, 0.35) inset;
+        transition: left 0.35s ease, top 0.35s ease, transform 0.2s ease;
+        animation: pulse 1.6s infinite ease-in-out;
+        will-change: left, top, transform;
+      }
+      .random-marker.bounce-once {
+        animation: marker-bounce 0.5s ease;
+      }
+      @keyframes pulse {
+        0% {
+          transform: translate(-50%, -50%) scale(0.88);
+          opacity: 0.95;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.12);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(0.88);
+          opacity: 0.95;
+        }
+      }
+      @keyframes marker-bounce {
+        0% {
+          transform: translate(-50%, -60%);
+        }
+        60% {
+          transform: translate(-50%, -45%);
+        }
+        100% {
+          transform: translate(-50%, -50%);
+        }
+      }
+      .sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(64px + env(safe-area-inset-bottom));
+        z-index: 35;
+        transition: transform 0.28s ease;
+        transform: translateY(calc(100% - 72px));
+        will-change: transform;
+      }
+      .sheet.open {
+        transform: translateY(0);
+      }
+    </style>
   </head>
   <body
     data-current-map="<%= currentMap || 'current' %>"
     data-map-image="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
     data-dev="<%= (typeof __dev !== 'undefined' && __dev) ? '1' : '0' %>"
+    class="min-h-screen font-sans text-[var(--text-light)] bg-[radial-gradient(circle_at_30%_-20%,var(--bg-start),var(--bg-end))] antialiased"
   >
     <!-- Header -->
     <header>
-      <div class="hero__bar">
-        <h1 class="app-title">Drop Picker</h1>
-
-        <div class="hero__actions">
-          <!-- Dev toggle (visible only for owner) -->
-          <% if (typeof __owner !== "undefined" && __owner) { %>
-          <button id="devToggle" class="icon-btn dev-toggle" title="Toggle Dev">
-            <span id="devState"><%= __dev ? "On" : "Off" %></span>
+      <div
+        class="hero__bar flex items-center justify-between px-[clamp(12px,4vw,24px)] py-1 min-h-[calc(var(--tap)+8px)]"
+      >
+        <h1
+          class="app-title m-0 text-[clamp(1.2rem,5vw,1.6rem)] font-extrabold uppercase tracking-wide cursor-pointer text-[var(--primary)] select-none"
+        >
+          Drop Picker
+        </h1>
+        <div class="hero__actions flex items-center gap-2">
+          <% if (typeof __owner !== 'undefined' && __owner) { %>
+          <button
+            id="devToggle"
+            class="icon-btn dev-toggle appearance-none border-0 bg-[var(--card-bg)] text-[var(--text-light)] w-[var(--tap)] h-[var(--tap)] rounded-xl grid place-items-center shadow-lg"
+            title="Toggle Dev"
+          >
+            <span id="devState"><%= __dev ? 'On' : 'Off' %></span>
           </button>
           <% } %>
-
-          <!-- Theme toggle -->
-          <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-          </button>
+          <button
+            id="themeToggle"
+            aria-label="Toggle theme"
+            class="icon-btn appearance-none border-0 bg-[var(--card-bg)] text-[var(--text-light)] w-[var(--tap)] h-[var(--tap)] rounded-xl grid place-items-center shadow-lg"
+          ></button>
         </div>
       </div>
     </header>
-
-    <% if (typeof __dev !== "undefined" && __dev) { %> <%-
-    include("partials/devpanel") %> <% } %>
-
-    <!-- Map -->
-    <main class="map-bleed">
-      <div class="map-container">
+    <% if (typeof __dev !== 'undefined' && __dev) { %> <%-
+    include('partials/devpanel') %> <% } %>
+    <!-- Map area -->
+    <main class="map-bleed pb-[calc(72px+env(safe-area-inset-bottom))]">
+      <div
+        class="map-container relative w-full bg-[radial-gradient(circle_at_center,rgba(11,2,38,0.7)_10%,transparent_85%)] max-w-[min(100vw,1100px)] mx-auto overflow-hidden aspect-square"
+      >
         <img
           id="mapImg"
           src="<%= (typeof mapImage !== 'undefined' && mapImage) || '' %>"
           alt="Fortnite Map"
+          class="block w-full h-full object-cover"
         />
         <div
           class="random-marker"
@@ -55,104 +157,153 @@
         ></div>
       </div>
     </main>
-
     <!-- Location text bar -->
-    <div class="location-bar">
-      Drop: <span id="locationText"><%= (location.name || location.id) %></span>
+    <div
+      class="location-bar text-center p-3 text-[clamp(16px,1.1rem,18px)] font-semibold text-[var(--accent)] bg-[var(--card-bg)] border-t border-[var(--hairline)] backdrop-blur-md"
+    >
+      Drop:
+      <span id="locationText" class="cursor-pointer" title="Tap to copy"
+        ><%= (location.name || location.id) %></span
+      >
     </div>
-
-    <!-- Player Stats (via Fortnite API) -->
-    <section id="statsSection" class="container stats-section">
-      <form id="statsForm" class="stats-form">
-        <strong class="stats-title">Player Stats</strong>
+    <!-- Player Stats section -->
+    <section
+      id="statsSection"
+      class="container stats-section max-w-[860px] mx-auto mt-3 p-3 bg-[var(--card-bg)] border border-[var(--hairline)] rounded-[var(--radius)] text-[var(--text-light)]"
+    >
+      <form
+        id="statsForm"
+        class="stats-form grid gap-2 items-center grid-cols-[1fr_auto_auto] md:grid-cols-[1fr_auto]"
+      >
+        <strong
+          class="stats-title opacity-85 text-[clamp(13px,1rem,14px)] col-span-full"
+        >
+          Player Stats
+        </strong>
         <input
           id="statsName"
-          class="stats-input"
+          class="stats-input p-2.5 rounded-lg border border-[var(--hairline)] bg-transparent text-inherit min-h-[var(--tap)] text-[clamp(13px,1rem,14px)]"
           name="name"
           type="text"
           placeholder="Epic username"
           autocomplete="off"
         />
-        <!-- New: select team type -->
-        <select id="teamType" class="stats-select" name="teamType" style="grid-column: 1 / -1;">
+        <select
+          id="teamType"
+          class="stats-select p-2.5 rounded-lg border border-[var(--hairline)] bg-transparent text-inherit min-h-[var(--tap)] text-[clamp(13px,1rem,14px)] col-span-full"
+          name="teamType"
+        >
           <option value="solo" selected>Solo</option>
           <option value="duo">Duo</option>
           <option value="trio">Trio</option>
           <option value="squad">Squad</option>
         </select>
-        <!-- New: select game mode -->
-        <select id="gamemode" class="stats-select" name="gamemode" style="grid-column: 1 / -1;">
-          <option value="zero_build" selected>Zero Build</option>
-          <!-- Updated gamemode options for Zero Build variants -->
-          <option value="og_zero_build">OG Zero Build</option>
-          <option value="reload_zero_build">Reload Zero Build</option>
-        </select>
-        <!-- New: season selector -->
         <select
-          id="statsSeason"
-          class="stats-select"
-          name="season"
-          style="grid-column: 1 / -1;"
+          id="gamemode"
+          class="stats-select p-2.5 rounded-lg border border-[var(--hairline)] bg-transparent text-inherit min-h-[var(--tap)] text-[clamp(13px,1rem,14px)] col-span-full"
+          name="gamemode"
         >
-          <option value="current" selected>Current</option>
-          <option value="global">Global</option>
+          <option value="zero_build" selected>Zero Build</option>
+          <option value="br">Battle Royale</option>
+          <option value="ltm">LTM</option>
+          <option value="stw">Save the World</option>
         </select>
-        <button type="submit" class="btn btn-secondary stats-btn">
+        <input
+          id="statsSeason"
+          class="stats-input p-2.5 rounded-lg border border-[var(--hairline)] bg-transparent text-inherit min-h-[var(--tap)] text-[clamp(13px,1rem,14px)] col-span-full"
+          name="season"
+          type="text"
+          value="current"
+          placeholder="Season (e.g. current)"
+        />
+        <button
+          type="submit"
+          class="btn btn-secondary stats-btn px-3 rounded-lg border-0 bg-[var(--primary)] text-white font-bold min-h-[var(--tap)] text-[clamp(13px,1rem,14px)]"
+        >
           Lookup
         </button>
-        <span id="statsStatus" class="stats-status"></span>
+        <span
+          id="statsStatus"
+          class="stats-status text-[clamp(12px,0.9rem,13px)] opacity-80 justify-self-end"
+        ></span>
       </form>
-      <div id="statsResult" class="stats-grid"></div>
+      <div
+        id="statsResult"
+        class="stats-grid mt-2 grid gap-2 grid-cols-4 md:grid-cols-3 sm:grid-cols-2"
+      ></div>
     </section>
-
-    <!-- Bottom sheet: controls -->
+    <!-- Bottom sheet controls -->
     <section class="sheet" id="sheet">
-      <!-- New labeled handle -->
       <button
-        class="sheet-handle"
+        class="sheet-handle w-full h-16 border-0 bg-transparent relative cursor-pointer grid place-items-center touch-manipulation"
         id="sheetToggle"
         aria-expanded="false"
         aria-controls="sheetContent"
       >
-        <div class="sheet-handle__inner">
-          <span class="sheet-handle__dot"></span>
-          <span class="sheet-handle__label"></span>
-          <span class="sheet-handle__chev" aria-hidden="true">⌄</span>
+        <div class="sheet-handle__inner grid gap-1.5 place-items-center">
+          <span
+            class="sheet-handle__dot w-[60px] h-[6px] rounded-full bg-[rgba(255,255,255,0.7)]"
+          ></span>
+          <span
+            class="sheet-handle__label text-[clamp(12px,0.9rem,13px)] text-[var(--muted)]"
+          ></span>
+          <span
+            class="sheet-handle__chev text-[clamp(12px,0.9rem,13px)] text-[var(--muted)] translate-y-[-2px]"
+            aria-hidden="true"
+            >⌄</span
+          >
         </div>
       </button>
-
-      <div class="sheet-content" id="sheetContent">
-        <div class="control-row">
-          <label>
+      <div
+        class="sheet-content flex flex-col gap-3 bg-[var(--card-bg)] backdrop-blur-lg border-t border-[var(--hairline)] p-4 rounded-tl-[var(--radius-lg)] rounded-tr-[var(--radius-lg)] pb-[calc(20px+env(safe-area-inset-bottom))]"
+        id="sheetContent"
+      >
+        <div
+          class="control-row flex flex-wrap justify-between items-center gap-3"
+        >
+          <label
+            class="flex flex-col text-[clamp(12px,0.9rem,13px)] opacity-90 gap-1 flex-1 min-w-[180px]"
+          >
             Marker Color
-            <input type="color" id="markerColorPicker" value="#ff0000" />
+            <input
+              type="color"
+              id="markerColorPicker"
+              value="#ff0000"
+              class="w-[var(--tap)] h-[var(--tap)] rounded-full border-none p-0 bg-transparent"
+            />
           </label>
-
           <div>
-            <label>Map</label>
-            <div style="opacity: 0.8">Current (from API)</div>
+            <label class="text-[clamp(12px,0.9rem,13px)]">Map</label>
+            <div class="opacity-80 text-[clamp(12px,0.9rem,13px)]">
+              Current (from API)
+            </div>
           </div>
         </div>
-
-        <button id="installBtn" class="btn btn-secondary" hidden>
-           Install app
+        <button
+          id="installBtn"
+          class="btn btn-secondary px-3 py-2 rounded-lg bg-[var(--card-bg)] text-[var(--text-light)] border border-[var(--hairline)]"
+          hidden
+        >
+          Install app
         </button>
       </div>
     </section>
-
     <!-- Bottom bar: primary action -->
-    <div class="bottom-bar">
-      <button id="fabRandom" class="primary-cta" aria-label="Pick random">
-         Drop
+    <div class="bottom-bar fixed left-0 right-0 bottom-0 z-[999]">
+      <button
+        id="fabRandom"
+        class="primary-cta w-full h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] text-[clamp(18px,1.25rem,20px)] font-extrabold border-0 text-white bg-gradient-to-b from-[var(--primary)] to-[var(--primary-dark)] shadow-[0_-2px_12px_rgba(0,0,0,0.35)] touch-manipulation active:translate-y-[1px]"
+        aria-label="Pick random"
+      >
+        Drop
       </button>
     </div>
-
+    <!-- Scripts: existing app logic retained -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      // --- THEME ---
+      // THEME
       const themeBtn = document.getElementById("themeToggle");
       const themeMeta = document.querySelector('meta[name="theme-color"]');
-
       (function initTheme() {
         const savedTheme = localStorage.getItem("theme");
         if (savedTheme)
@@ -160,7 +311,6 @@
         setThemeIcon();
         applyThemeMeta();
       })();
-
       function setThemeIcon() {
         const isLight =
           document.documentElement.getAttribute("data-theme") === "light";
@@ -179,20 +329,13 @@
         setThemeIcon();
         applyThemeMeta();
       });
-
       (function ownerUnlockGesture() {
         const titleEl = document.querySelector(".app-title");
         if (!titleEl) return;
-
-        // Disable iOS context menu on the element (otherwise pointercancel)
         titleEl.addEventListener("contextmenu", (e) => e.preventDefault());
-
-        // --- Long press (primary) ---
         let pressTimer = null;
         let pressed = false;
-
         const LONG_PRESS_MS = 800;
-
         function askOwnerSecret() {
           const secret = prompt("Enter owner secret:");
           if (!secret) return;
@@ -215,7 +358,6 @@
             }
           })();
         }
-
         function startPress() {
           pressed = true;
           clearTimeout(pressTimer);
@@ -228,15 +370,12 @@
           clearTimeout(pressTimer);
           pressTimer = null;
         }
-
-        // Pointer events with touch/mouse fallback
         if (window.PointerEvent) {
           titleEl.addEventListener("pointerdown", startPress);
           ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => {
             titleEl.addEventListener(evt, endPress);
           });
         } else {
-          // Safari fallback (old)
           titleEl.addEventListener(
             "touchstart",
             (e) => {
@@ -253,8 +392,6 @@
             titleEl.addEventListener(evt, endPress);
           });
         }
-
-        // --- Fallback: 5 quick taps within 2.5s ---
         let taps = 0;
         let tapWindow = null;
         titleEl.addEventListener("click", () => {
@@ -273,12 +410,10 @@
           }
         });
       })();
-
       (function initDevToggle() {
         const btn = document.getElementById("devToggle");
         if (!btn) return;
         const stateEl = document.getElementById("devState");
-
         btn.addEventListener("click", async () => {
           const nextOn = (stateEl.textContent || "").toLowerCase() !== "on";
           const body = new URLSearchParams({ on: nextOn ? "1" : "0" });
@@ -291,23 +426,18 @@
             if (!res.ok) throw new Error("toggle failed");
             const data = await res.json();
             stateEl.textContent = data.dev ? "On" : "Off";
-            // Reload to load dev CSS/panel correctly:
             location.reload();
           } catch (e) {
             console.error("Dev toggle error", e);
           }
         });
       })();
-
-      // --- Bottom sheet toggle ---
       const sheet = document.getElementById("sheet");
       const sheetToggle = document.getElementById("sheetToggle");
       sheetToggle.addEventListener("click", () => {
         const open = sheet.classList.toggle("open");
         sheetToggle.setAttribute("aria-expanded", String(open));
       });
-
-      // --- Copy location on tap ---
       const locTextEl = document.getElementById("locationText");
       locTextEl.style.cursor = "pointer";
       locTextEl.title = "Tap to copy";
@@ -317,8 +447,6 @@
         } catch {}
         if (navigator.vibrate) navigator.vibrate(40);
       });
-
-      // --- Haptics helper ---
       let canHaptic = false;
       window.addEventListener(
         "pointerdown",
@@ -327,34 +455,28 @@
         },
         { once: true }
       );
-
       function ping() {
         if (canHaptic && navigator.vibrate) {
           navigator.vibrate(80);
         }
       }
-
-      // --- DOM refs ---
       const marker = document.getElementById("marker");
       const mapImg = document.getElementById("mapImg");
-      const mapSelect = { value: "current" };
-
       function positionMarker(x, y) {
         marker.style.left = x * 100 + "%";
         marker.style.top = y * 100 + "%";
       }
-
-      // Init marker from server data
       positionMarker(
         parseFloat(marker.dataset.x),
         parseFloat(marker.dataset.y)
       );
-
-      // --- Color picker persistence ---
       const markerColorPicker = document.getElementById("markerColorPicker");
       const savedColor = localStorage.getItem("markerColor");
       if (savedColor) {
-        document.documentElement.style.setProperty("--marker-color", savedColor);
+        document.documentElement.style.setProperty(
+          "--marker-color",
+          savedColor
+        );
         markerColorPicker.value = savedColor;
       }
       markerColorPicker.addEventListener("input", (e) => {
@@ -362,8 +484,6 @@
         document.documentElement.style.setProperty("--marker-color", value);
         localStorage.setItem("markerColor", value);
       });
-
-      // Stronger reconnection settings (websocket-first)
       const socket = io({
         transports: ["websocket"],
         reconnection: true,
@@ -372,86 +492,66 @@
         reconnectionDelayMax: 5000,
         timeout: 20000,
       });
-
       const fab = document.getElementById("fabRandom");
       fab.addEventListener("click", () => {
         const mapId = document.body.dataset.currentMap || "current";
         socket.emit("newRandom", { mapId }, (res) => {
           if (!res || !res.ok) {
-            // ask server to re-send a location if the first try failed
             socket.emit("joinMap", { mapId });
           }
         });
         ping();
       });
-
       function ensureConnected() {
         if (socket.disconnected) socket.connect();
       }
-
-      // Rejoin map after reconnect
       socket.on("reconnect", () => {
         const mapId = document.body.dataset.currentMap || "current";
         socket.emit("joinMap", { mapId });
       });
-
-      // Watchdog: reload if app was frozen for too long
       let lastAlive = Date.now();
       const STALE_MS = 45 * 1000;
-
       function joinCurrentRoom() {
         const mapId = document.body.dataset.currentMap || "current";
         socket.emit("joinMap", { mapId });
       }
-      // replace your existing reconnect handler with this:
       socket.on("connect", () => {
         lastAlive = Date.now();
-        joinCurrentRoom(); // <-- make sure we’re in the room on any (re)connect
+        joinCurrentRoom();
       });
       socket.on("update", () => (lastAlive = Date.now()));
-
       window.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           ensureConnected();
           if (Date.now() - lastAlive > STALE_MS) location.reload();
         }
       });
-
       window.addEventListener("pageshow", (e) => {
         if (e.persisted) return location.reload();
         ensureConnected();
       });
-
       window.addEventListener("focus", joinCurrentRoom);
-
       window.addEventListener("online", ensureConnected);
-
-      // Socket updates
       socket.on("update", (loc) => {
         if (loc.mapId) {
-          document.body.dataset.currentMap = loc.mapId; // single map for now
+          document.body.dataset.currentMap = loc.mapId;
         }
         if (loc.mapImage) {
-          mapImg.src = loc.mapImage; // server-controlled (remote API URL)
+          mapImg.src = loc.mapImage;
         }
         document.getElementById("locationText").textContent =
           loc.name || loc.id;
-
         positionMarker(Number(loc.x), Number(loc.y));
         marker.classList.add("bounce-once");
         setTimeout(() => marker.classList.remove("bounce-once"), 500);
         ping();
       });
-
-      // --- PWA install flow ---
       const installBtn = document.getElementById("installBtn");
       let deferredPrompt = null;
-
       const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         window.navigator.standalone === true;
       if (isStandalone) installBtn.hidden = true;
-
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").then(() => {
           if (
@@ -465,13 +565,11 @@
           }
         });
       }
-
       window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
         installBtn.hidden = false;
       });
-
       installBtn.addEventListener("click", async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
@@ -479,12 +577,9 @@
         deferredPrompt = null;
         installBtn.hidden = true;
       });
-
       window.addEventListener("appinstalled", () =>
         console.log("[PWA] appinstalled")
       );
-
-      // --- Stats lookup ---
       (function initStats() {
         const form = document.getElementById("statsForm");
         if (!form) return;
@@ -494,15 +589,10 @@
         const seasonEl = document.getElementById("statsSeason");
         const statusEl = document.getElementById("statsStatus");
         const outEl = document.getElementById("statsResult");
-
-        // helper to parse raw stats into friendly numbers
         function parseStats(obj) {
           obj = obj || {};
           const matches =
-            obj.matchesplayed ??
-            obj.matches_played ??
-            obj.matches ??
-            0;
+            obj.matchesplayed ?? obj.matches_played ?? obj.matches ?? 0;
           const wins = obj.placetop1 ?? obj.wins ?? 0;
           const kills = obj.kills ?? 0;
           const top10 = obj.placetop10 ?? obj.top10 ?? 0;
@@ -512,8 +602,7 @@
             kd = kills / Math.max(1, matches - wins);
           }
           kd = kd ? +kd.toFixed(2) : 0;
-          let winRate =
-            obj.winrate ?? obj.win_rate ?? obj["win%"] ?? 0;
+          let winRate = obj.winrate ?? obj.win_rate ?? obj["win%"] ?? 0;
           if (!winRate && matches) {
             winRate = (wins * 100) / matches;
           }
@@ -528,39 +617,35 @@
             score,
           };
         }
-
         function render(data) {
           const m = parseStats(data.modeStats || {});
           const scopeLabel =
-            data.scope === "season"
-              ? `Season: ${data.season}`
-              : "Global";
+            data.scope === "season" ? `Season: ${data.season}` : "Global";
           outEl.innerHTML = `
-            <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
+            <div class="stat-card bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">Matches</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${
               m.matches ?? "-"
             }</span></div>
-            <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
+            <div class="stat-card bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">Wins</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${
               m.wins ?? "-"
             }</span></div>
-            <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
+            <div class="stat-card bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">Win %</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${
               m.winRate ?? "-"
             }</span></div>
-            <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
+            <div class="stat-card bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">Kills</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${
               m.kills ?? "-"
             }</span></div>
-            <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
+            <div class="stat-card bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">K/D</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${
               m.kd ?? "-"
             }</span></div>
-            <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
+            <div class="stat-card bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">Top 10</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${
               m.top10 ?? "-"
             }</span></div>
-            <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
+            <div class="stat-card bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">Score</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${
               m.score ?? "-"
             }</span></div>
-            <div class="stat-card stat-card--muted"><span class="stat-label">Scope</span><span class="stat-value">${scopeLabel}</span></div>
+            <div class="stat-card stat-card--muted bg-[rgba(0,0,0,0.25)] border border-[var(--hairline)] rounded-[12px] p-2.5 opacity-85"><span class="stat-label block text-[clamp(12px,0.9rem,13px)] opacity-80">Scope</span><span class="stat-value block font-extrabold text-[clamp(16px,1.1rem,18px)]">${scopeLabel}</span></div>
           `;
         }
-
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
           const name = nameEl.value.trim();
@@ -580,7 +665,6 @@
               seasonEl.value && seasonEl.value.trim()
                 ? seasonEl.value.trim()
                 : "current";
-            // Determine scope: if season is "global" treat as global scope
             const scope =
               season.toLowerCase() === "global" ? "global" : "season";
             const res = await fetch(
@@ -601,7 +685,7 @@
         });
       })();
     </script>
-    <% if (typeof __dev !== "undefined" && __dev) { %>
+    <% if (typeof __dev !== 'undefined' && __dev) { %>
     <script src="/js/devmode.js" defer></script>
     <% } %>
   </body>

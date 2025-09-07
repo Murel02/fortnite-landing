@@ -22,17 +22,19 @@
         <h1 class="app-title">Drop Picker</h1>
 
         <div class="hero__actions">
-          <!-- Dev toggle (vises kun for owner) -->
+          <!-- Dev toggle (visible only for owner) -->
           <% if (typeof __owner !== "undefined" && __owner) { %>
           <button id="devToggle" class="icon-btn dev-toggle" title="Toggle Dev">
-            🧪 <span id="devState"><%= __dev ? "On" : "Off" %></span>
+            <span id="devState"><%= __dev ? "On" : "Off" %></span>
           </button>
           <% } %>
 
           <!-- Theme toggle -->
-          <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-            🌙
-          </button>
+          <button
+            id="themeToggle"
+            class="icon-btn"
+            aria-label="Toggle theme"
+          ></button>
         </div>
       </div>
     </header>
@@ -74,6 +76,40 @@
           placeholder="Epic username"
           autocomplete="off"
         />
+        <!-- New: select team type -->
+        <select
+          id="teamType"
+          class="stats-select"
+          name="teamType"
+          style="grid-column: 1 / -1"
+        >
+          <option value="solo" selected>Solo</option>
+          <option value="duo">Duo</option>
+          <option value="trio">Trio</option>
+          <option value="squad">Squad</option>
+        </select>
+        <!-- New: select game mode -->
+        <select
+          id="gamemode"
+          class="stats-select"
+          name="gamemode"
+          style="grid-column: 1 / -1"
+        >
+          <option value="zero_build" selected>Zero Build</option>
+          <option value="br">Battle Royale</option>
+          <option value="ltm">LTM</option>
+          <option value="stw">Save the World</option>
+        </select>
+        <!-- New: season input (leave blank for current) -->
+        <input
+          id="statsSeason"
+          class="stats-input"
+          name="season"
+          type="text"
+          value="current"
+          placeholder="Season (e.g. current)"
+          style="grid-column: 1 / -1"
+        />
         <button type="submit" class="btn btn-secondary stats-btn">
           Lookup
         </button>
@@ -112,7 +148,7 @@
         </div>
 
         <button id="installBtn" class="btn btn-secondary" hidden>
-          📲 Install app
+          Install app
         </button>
       </div>
     </section>
@@ -120,7 +156,7 @@
     <!-- Bottom bar: primary action -->
     <div class="bottom-bar">
       <button id="fabRandom" class="primary-cta" aria-label="Pick random">
-        🎲 Drop
+        Drop
       </button>
     </div>
 
@@ -141,7 +177,7 @@
       function setThemeIcon() {
         const isLight =
           document.documentElement.getAttribute("data-theme") === "light";
-        themeBtn.textContent = isLight ? "🌙" : "🌞";
+        themeBtn.textContent = isLight ? "" : "";
       }
       function applyThemeMeta() {
         const isLight =
@@ -161,10 +197,10 @@
         const titleEl = document.querySelector(".app-title");
         if (!titleEl) return;
 
-        // Slå iOS' contextmenu fra på elementet (ellers får vi pointercancel)
+        // Disable iOS context menu on the element (otherwise pointercancel)
         titleEl.addEventListener("contextmenu", (e) => e.preventDefault());
 
-        // --- Long press (primær) ---
+        // --- Long press (primary) ---
         let pressTimer = null;
         let pressed = false;
 
@@ -206,14 +242,14 @@
           pressTimer = null;
         }
 
-        // Pointer events, med touch/mouse fallback
+        // Pointer events with touch/mouse fallback
         if (window.PointerEvent) {
           titleEl.addEventListener("pointerdown", startPress);
           ["pointerup", "pointercancel", "pointerleave"].forEach((evt) => {
             titleEl.addEventListener(evt, endPress);
           });
         } else {
-          // Safari fallback (gamle)
+          // Safari fallback (old)
           titleEl.addEventListener(
             "touchstart",
             (e) => {
@@ -231,7 +267,7 @@
           });
         }
 
-        // --- Fallback: 5 hurtige taps inden for 2.5s ---
+        // --- Fallback: 5 quick taps within 2.5s ---
         let taps = 0;
         let tapWindow = null;
         titleEl.addEventListener("click", () => {
@@ -268,7 +304,7 @@
             if (!res.ok) throw new Error("toggle failed");
             const data = await res.json();
             stateEl.textContent = data.dev ? "On" : "Off";
-            // Reload for at indlæse dev CSS/panel korrekt:
+            // Reload to load dev CSS/panel correctly:
             location.reload();
           } catch (e) {
             console.error("Dev toggle error", e);
@@ -465,42 +501,74 @@
       );
 
       // --- Stats lookup ---
-      // --- Stats lookup ---
       (function initStats() {
         const form = document.getElementById("statsForm");
         if (!form) return;
         const nameEl = document.getElementById("statsName");
+        const teamTypeEl = document.getElementById("teamType");
+        const gamemodeEl = document.getElementById("gamemode");
+        const seasonEl = document.getElementById("statsSeason");
         const statusEl = document.getElementById("statsStatus");
         const outEl = document.getElementById("statsResult");
 
+        // helper to parse raw stats into friendly numbers
+        function parseStats(obj) {
+          obj = obj || {};
+          const matches =
+            obj.matchesplayed ?? obj.matches_played ?? obj.matches ?? 0;
+          const wins = obj.placetop1 ?? obj.wins ?? 0;
+          const kills = obj.kills ?? 0;
+          const top10 = obj.placetop10 ?? obj.top10 ?? 0;
+          const score = obj.score ?? 0;
+          let kd = obj.kd ?? obj["k/d"] ?? obj.kdr ?? 0;
+          if (!kd && matches > wins) {
+            kd = kills / Math.max(1, matches - wins);
+          }
+          kd = kd ? +kd.toFixed(2) : 0;
+          let winRate = obj.winrate ?? obj.win_rate ?? obj["win%"] ?? 0;
+          if (!winRate && matches) {
+            winRate = (wins * 100) / matches;
+          }
+          winRate = winRate ? +winRate.toFixed(2) : 0;
+          return {
+            matches,
+            wins,
+            kills,
+            kd,
+            winRate,
+            top10,
+            score,
+          };
+        }
+
         function render(data) {
-          const s = data.all || {};
+          const m = parseStats(data.modeStats || {});
           const scopeLabel =
             data.scope === "season" ? `Season: ${data.season}` : "Global";
           outEl.innerHTML = `
-        <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
-          s.matches ?? "-"
-        }</span></div>
-        <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
-          s.wins ?? "-"
-        }</span></div>
-        <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
-          s.winRate ?? "-"
-        }</span></div>
-        <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
-          s.kills ?? "-"
-        }</span></div>
-        <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
-          s.kd ?? "-"
-        }</span></div>
-        <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
-          s.top10 ?? "-"
-        }</span></div>
-        <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
-          s.score ?? "-"
-        }</span></div>
-        <div class="stat-card stat-card--muted"><span class="stat-label">Scope</span><span class="stat-value">${scopeLabel}</span></div>
-      `;
+            <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
+              m.matches ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Wins</span><span class="stat-value">${
+              m.wins ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Win %</span><span class="stat-value">${
+              m.winRate ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Kills</span><span class="stat-value">${
+              m.kills ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">K/D</span><span class="stat-value">${
+              m.kd ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Top 10</span><span class="stat-value">${
+              m.top10 ?? "-"
+            }</span></div>
+            <div class="stat-card"><span class="stat-label">Score</span><span class="stat-value">${
+              m.score ?? "-"
+            }</span></div>
+            <div class="stat-card stat-card--muted"><span class="stat-label">Scope</span><span class="stat-value">${scopeLabel}</span></div>
+          `;
         }
 
         form.addEventListener("submit", async (e) => {
@@ -510,13 +578,25 @@
           statusEl.textContent = "Loading…";
           outEl.innerHTML = "";
           try {
-            // Default: season stats for current season
-            const scope = "season";
-            const season = "current";
+            const teamType =
+              teamTypeEl.value && teamTypeEl.value.trim()
+                ? teamTypeEl.value.trim()
+                : "solo";
+            const gamemode =
+              gamemodeEl.value && gamemodeEl.value.trim()
+                ? gamemodeEl.value.trim()
+                : "zero_build";
+            const season =
+              seasonEl.value && seasonEl.value.trim()
+                ? seasonEl.value.trim()
+                : "current";
+            // Determine scope: if season is "global" treat as global scope
+            const scope =
+              season.toLowerCase() === "global" ? "global" : "season";
             const res = await fetch(
               `/api/stats?name=${encodeURIComponent(
                 name
-              )}&platform=epic&scope=${scope}&season=${season}`,
+              )}&platform=epic&scope=${scope}&season=${season}&teamType=${teamType}&gamemode=${gamemode}`,
               { cache: "no-store" }
             );
             if (!res.ok) throw new Error("Request failed");

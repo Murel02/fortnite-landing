@@ -143,33 +143,65 @@ function makeMockStats(name) {
 }
 
 /**
- * Find the best matching key within the statistics object for the desired
- * teamType and gamemode.  Keys are matched case‑insensitively and may
- * include both the team (solo, duo, trio, squad) and the gamemode (e.g.
- * "zero_build", "br", "stw").  When a gamemode is provided the helper
- * first attempts to find a key that contains both the team and the gamemode.
- * If none exist it will fall back to a key that contains only the team.
+ * Identify all keys within the statistics object that belong to the requested
+ * teamType and optionally match the provided gamemode.  Keys are matched
+ * case‑insensitively.  If a gamemode is provided, keys that include both
+ * the team and the gamemode are returned.  When no such keys exist, the
+ * helper returns keys that contain only the team string.  This helper
+ * returns an array of matching keys so callers can aggregate across
+ * multiple variations (e.g. `solo_zero_build` and `solo_reload_zero_build`).
  *
  * @param {object} stats - The `global_stats` object from the API response.
  * @param {string} teamType - One of "solo", "duo", "trio", or "squad".
- * @param {string} [gamemode] - The desired gamemode (e.g. "zero_build", "br").
- * @returns {string|null} The matching key or null if none are found.
+ * @param {string} [gamemode] - Optional gamemode such as "zero_build".
+ * @returns {string[]} Array of matching keys (may be empty).
  */
-function findStatsKey(stats, teamType, gamemode) {
-  if (!stats || typeof stats !== "object") return null;
+function findStatKeys(stats, teamType, gamemode) {
+  if (!stats || typeof stats !== "object") return [];
   const keys = Object.keys(stats);
   const team = String(teamType || "").toLowerCase();
   const mode = gamemode ? gamemode.toLowerCase() : null;
-  // Filter keys that include the team string (solo, duo, etc.)
+  // keys that include the team string (solo, duo, etc.)
   let matches = keys.filter((k) => k.toLowerCase().includes(team));
   if (mode) {
-    // Further filter keys that include the gamemode (e.g. zero_build)
+    // keys that include both the team and the gamemode (e.g. zero_build)
     const withMode = matches.filter((k) => k.toLowerCase().includes(mode));
     if (withMode.length > 0) {
       matches = withMode;
     }
   }
-  return matches.length > 0 ? matches[0] : null;
+  return matches;
+}
+
+/**
+ * Combine multiple stats objects into a single aggregate.  This function
+ * understands common property names from fortniteapi.io (`matchesplayed`,
+ * `matches_played`, `matches`, `placetop1`, `wins`, `kills`, `placetop10`,
+ * `top10`, `score`) and sums them together.  It intentionally ignores
+ * unknown properties.  If no objects are provided the result will be an
+ * empty object.
+ *
+ * @param {object[]} list - Array of mode stats to merge.
+ * @returns {object} Aggregated stats.
+ */
+function aggregateModeStats(list) {
+  const result = {
+    matchesplayed: 0,
+    placetop1: 0,
+    kills: 0,
+    placetop10: 0,
+    score: 0,
+  };
+  for (const stats of list) {
+    if (!stats || typeof stats !== "object") continue;
+    const mp = stats.matchesplayed ?? stats.matches_played ?? stats.matches;
+    result.matchesplayed += num(mp);
+    result.placetop1 += num(stats.placetop1 ?? stats.wins);
+    result.kills += num(stats.kills);
+    result.placetop10 += num(stats.placetop10 ?? stats.top10);
+    result.score += num(stats.score);
+  }
+  return result;
 }
 
 exports.getStats = async (req, res) => {
@@ -356,42 +388,35 @@ exports.getStats = async (req, res) => {
         .status(statsResp.status)
         .json({ error: "Stats fetch failed", details: msg.slice(0, 500) });
     }
-    // Parse aggregate stats
+    // Parse aggregate stats across all modes
     const all = parseFioStats(payload);
-    // Extract mode‑specific stats
+    // Extract and aggregate mode‑specific stats.  The upstream API may
+    // return multiple buckets per team and gamemode (e.g. `solo_zero_build`,
+    // `solo_og_zero_build`).  We collect all keys that match the desired
+    // team and gamemode, then sum their stats together.  If no keys match
+    // both the team and gamemode we try again without the gamemode
+    // constraint.  As a final fallback the aggregated stats from `all`
+    // are used.
     const gs = payload?.global_stats || payload?.global || payload?.stats || {};
-    const key = findStatsKey(gs, teamType, gamemode);
-    let modeStats = key && gs[key] ? gs[key] : {};
-    /*
-     * The upstream Fortnite API does not always provide separate buckets for
-     * every gamemode/team combination.  In particular, there is often only
-     * one set of stats per team (e.g. "solo", "duo", "squad"), and no
-     * specific key for modes like Zero Build.  When the lookup above
-     * returns an empty object (no matches, wins or kills), fall back to
-     * a second pass that ignores the gamemode entirely.  If that still
-     * yields no usable data, use the aggregate of all modes so that the
-     * client sees some meaningful numbers instead of zeros.
-     */
-    const hasData = modeStats && Object.keys(modeStats).some((k) => {
-      const keyLower = k.toLowerCase();
-      return [
-        "matchesplayed",
-        "matches_played",
-        "matches",
-        "placetop1",
-        "wins",
-        "kills",
-      ].includes(keyLower);
-    });
-    if (!hasData) {
-      // First try again without the gamemode filter
-      const fallbackKey = findStatsKey(gs, teamType, null);
-      if (fallbackKey && gs[fallbackKey]) {
-        modeStats = gs[fallbackKey];
-      } else {
-        // As a last resort use an aggregate of all modes
-        modeStats = aggregateGlobalStats(gs);
-      }
+    let keys = findStatKeys(gs, teamType, gamemode);
+    if (keys.length === 0 && gamemode) {
+      keys = findStatKeys(gs, teamType, null);
+    }
+    let modeStats = {};
+    if (keys.length > 0) {
+      const list = keys
+        .map((k) => gs[k])
+        .filter((v) => v && typeof v === "object");
+      modeStats = aggregateModeStats(list);
+    } else {
+      // fall back to aggregated stats across all modes so user sees something
+      modeStats = {
+        matchesplayed: all.matches,
+        placetop1: all.wins,
+        kills: all.kills,
+        placetop10: all.top10,
+        score: all.score,
+      };
     }
     return res.json({
       name: resolvedName,

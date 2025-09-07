@@ -1,3 +1,16 @@
+// controllers/statsController.js
+//
+// This is a local copy of the upstream statsController with modifications
+// to support filtering Fortnite statistics by team type and gamemode.  The
+// controller exposes a single handler `getStats` which is registered
+// under the `/api/stats` route.  It performs the following steps:
+//   1. Look up the player’s account ID using their display name.
+//   2. Fetch season or lifetime statistics from the fortniteapi.io endpoint.
+//   3. Parse the response to compute aggregated stats and extract a subset
+//      of stats for a specific team/gamemode combination.
+//   4. Return a JSON response containing both aggregate and mode‑specific
+//      statistics, along with the resolved player name and metadata.
+
 const { doFetch } = require("../utils/doFetch");
 
 // allow ALLOW_STATS_MOCK or ALLOW_STAT_MOCK
@@ -348,7 +361,38 @@ exports.getStats = async (req, res) => {
     // Extract mode‑specific stats
     const gs = payload?.global_stats || payload?.global || payload?.stats || {};
     const key = findStatsKey(gs, teamType, gamemode);
-    const modeStats = key && gs[key] ? gs[key] : {};
+    let modeStats = key && gs[key] ? gs[key] : {};
+    /*
+     * The upstream Fortnite API does not always provide separate buckets for
+     * every gamemode/team combination.  In particular, there is often only
+     * one set of stats per team (e.g. "solo", "duo", "squad"), and no
+     * specific key for modes like Zero Build.  When the lookup above
+     * returns an empty object (no matches, wins or kills), fall back to
+     * a second pass that ignores the gamemode entirely.  If that still
+     * yields no usable data, use the aggregate of all modes so that the
+     * client sees some meaningful numbers instead of zeros.
+     */
+    const hasData = modeStats && Object.keys(modeStats).some((k) => {
+      const keyLower = k.toLowerCase();
+      return [
+        "matchesplayed",
+        "matches_played",
+        "matches",
+        "placetop1",
+        "wins",
+        "kills",
+      ].includes(keyLower);
+    });
+    if (!hasData) {
+      // First try again without the gamemode filter
+      const fallbackKey = findStatsKey(gs, teamType, null);
+      if (fallbackKey && gs[fallbackKey]) {
+        modeStats = gs[fallbackKey];
+      } else {
+        // As a last resort use an aggregate of all modes
+        modeStats = aggregateGlobalStats(gs);
+      }
+    }
     return res.json({
       name: resolvedName,
       platform,

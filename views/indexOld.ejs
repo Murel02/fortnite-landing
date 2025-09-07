@@ -30,8 +30,11 @@
           <% } %>
 
           <!-- Theme toggle -->
-          <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-          </button>
+          <button
+            id="themeToggle"
+            class="icon-btn"
+            aria-label="Toggle theme"
+          ></button>
         </div>
       </div>
     </header>
@@ -74,29 +77,39 @@
           autocomplete="off"
         />
         <!-- New: select team type -->
-        <select id="teamType" class="stats-select" name="teamType" style="grid-column: 1 / -1;">
+        <select
+          id="teamType"
+          class="stats-select"
+          name="teamType"
+          style="grid-column: 1 / -1"
+        >
           <option value="solo" selected>Solo</option>
           <option value="duo">Duo</option>
           <option value="trio">Trio</option>
           <option value="squad">Squad</option>
         </select>
         <!-- New: select game mode -->
-        <select id="gamemode" class="stats-select" name="gamemode" style="grid-column: 1 / -1;">
-          <option value="zero_build" selected>Zero Build</option>
-          <!-- Updated gamemode options for Zero Build variants -->
-          <option value="og_zero_build">OG Zero Build</option>
-          <option value="reload_zero_build">Reload Zero Build</option>
-        </select>
-        <!-- New: season selector -->
         <select
-          id="statsSeason"
+          id="gamemode"
           class="stats-select"
-          name="season"
-          style="grid-column: 1 / -1;"
+          name="gamemode"
+          style="grid-column: 1 / -1"
         >
-          <option value="current" selected>Current</option>
-          <option value="global">Global</option>
+          <option value="zero_build" selected>Zero Build</option>
+          <option value="br">Battle Royale</option>
+          <option value="ltm">LTM</option>
+          <option value="stw">Save the World</option>
         </select>
+        <!-- New: season input (leave blank for current) -->
+        <input
+          id="statsSeason"
+          class="stats-input"
+          name="season"
+          type="text"
+          value="current"
+          placeholder="Season (e.g. current)"
+          style="grid-column: 1 / -1"
+        />
         <button type="submit" class="btn btn-secondary stats-btn">
           Lookup
         </button>
@@ -135,7 +148,7 @@
         </div>
 
         <button id="installBtn" class="btn btn-secondary" hidden>
-           Install app
+          Install app
         </button>
       </div>
     </section>
@@ -143,7 +156,7 @@
     <!-- Bottom bar: primary action -->
     <div class="bottom-bar">
       <button id="fabRandom" class="primary-cta" aria-label="Pick random">
-         Drop
+        Drop
       </button>
     </div>
 
@@ -354,7 +367,10 @@
       const markerColorPicker = document.getElementById("markerColorPicker");
       const savedColor = localStorage.getItem("markerColor");
       if (savedColor) {
-        document.documentElement.style.setProperty("--marker-color", savedColor);
+        document.documentElement.style.setProperty(
+          "--marker-color",
+          savedColor
+        );
         markerColorPicker.value = savedColor;
       }
       markerColorPicker.addEventListener("input", (e) => {
@@ -499,10 +515,7 @@
         function parseStats(obj) {
           obj = obj || {};
           const matches =
-            obj.matchesplayed ??
-            obj.matches_played ??
-            obj.matches ??
-            0;
+            obj.matchesplayed ?? obj.matches_played ?? obj.matches ?? 0;
           const wins = obj.placetop1 ?? obj.wins ?? 0;
           const kills = obj.kills ?? 0;
           const top10 = obj.placetop10 ?? obj.top10 ?? 0;
@@ -512,8 +525,7 @@
             kd = kills / Math.max(1, matches - wins);
           }
           kd = kd ? +kd.toFixed(2) : 0;
-          let winRate =
-            obj.winrate ?? obj.win_rate ?? obj["win%"] ?? 0;
+          let winRate = obj.winrate ?? obj.win_rate ?? obj["win%"] ?? 0;
           if (!winRate && matches) {
             winRate = (wins * 100) / matches;
           }
@@ -532,9 +544,7 @@
         function render(data) {
           const m = parseStats(data.modeStats || {});
           const scopeLabel =
-            data.scope === "season"
-              ? `Season: ${data.season}`
-              : "Global";
+            data.scope === "season" ? `Season: ${data.season}` : "Global";
           outEl.innerHTML = `
             <div class="stat-card"><span class="stat-label">Matches</span><span class="stat-value">${
               m.matches ?? "-"
